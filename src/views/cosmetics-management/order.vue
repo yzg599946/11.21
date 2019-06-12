@@ -558,21 +558,7 @@ export default {
       this.editDialogVisible = false;
     },
     handleSearch() {
-      console.log("时间：" + this.timeSelectValue);
-      console.log("业务员" + this.salemanValue);
-      console.log("渠道" + this.channelValue);
-      console.log("产品" + this.productValue);
-      console.log("有效" + this.usefulValue);
-      console.log("重单" + this.repeatOrderValue);
-      console.log("重复姓名手机" + this.repeatNamePhoneValue);
-      console.log("导入京东" + this.exportjdValue);
-      console.log("颜色" + this.colorInput);
-      console.log("姓名" + this.nameInput);
-      console.log("电话" + this.phoneNumberInput);
-      console.log("起始ID" + this.minIdInput);
-      console.log("结束ID" + this.maxIdInput);
-      console.log("起始价格" + this.minPriceInput);
-      console.log("结束价格" + this.maxPriceInput);
+      console.log(this.$router.options.routes)
     },
     handleUseful(row, column, cell, event) {
       let count = 0;

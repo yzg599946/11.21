@@ -32,6 +32,7 @@ export default {
     ]),
     routes() {
       return this.$router.options.routes
+      console.log(this.$router.options.routes)
     },
     activeMenu() {
       const route = this.$route

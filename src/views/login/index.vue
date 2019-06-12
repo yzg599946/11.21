@@ -1,14 +1,19 @@
 <template>
   <div class="login-container">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
-
+    <el-form
+      ref="loginForm"
+      :model="loginForm"
+      :rules="loginRules"
+      class="login-form"
+      auto-complete="on"
+      label-position="left"
+    >
       <div class="title-container">
         <h3 class="title">隆辉腾管理系统</h3>
       </div>
-
       <el-form-item prop="username">
         <span class="svg-container">
-          <svg-icon icon-class="user" />
+          <svg-icon icon-class="user"/>
         </span>
         <el-input
           ref="username"
@@ -20,10 +25,9 @@
           auto-complete="on"
         />
       </el-form-item>
-
       <el-form-item prop="password">
         <span class="svg-container">
-          <svg-icon icon-class="password" />
+          <svg-icon icon-class="password"/>
         </span>
         <el-input
           :key="passwordType"
@@ -37,93 +41,144 @@
           @keyup.enter.native="handleLogin"
         />
         <span class="show-pwd" @click="showPwd">
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
         </span>
       </el-form-item>
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登陆</el-button>
+      <el-form-item prop="verifycode" class="verify-item">
+        <span class="svg-container">
+          <svg-icon icon-class="verify"/>
+        </span>
+        <el-input
+          class="verify-input"
+          ref="verifycode"
+          v-model="loginForm.verifycode"
+          placeholder="请输入验证码"
+          name="verifycode"
+          type="text"
+          tabindex="3"
+          auto-complete="on"
+        />
+        <el-button
+          class="verify-button"
+          type="danger"
+          round
+          size="mini"
+          :loading="verifycodeLoad"
+          @click.native.prevent="handleGetVerifyCode"
+        >{{verifyButtonText}}</el-button>
+      </el-form-item>
+      <el-button
+        :loading="loading"
+        type="primary"
+        style="width:100%;margin-bottom:30px;"
+        @click.native.prevent="handleLogin"
+      >登陆</el-button>
     </el-form>
   </div>
 </template>
 
 <script>
-import { validUsername } from '@/utils/validate'
+import { validUsername } from "@/utils/validate";
+import { clearTimeout, clearInterval } from "timers";
 
 export default {
-  name: 'Login',
+  name: "Login",
   data() {
-    const validateUsername = (rule, value, callback) => {
-      if (!validUsername(value)) {
-        callback(new Error('请输入正确的用户名'))
-      } else {
-        callback()
-      }
-    }
+    // const validateUsername = (rule, value, callback) => {
+    //   if (!validUsername(value)) {
+    //     callback(new Error("请输入正确的用户名"));
+    //   } else {
+    //     callback();
+    //   }
+    // };
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
-        callback(new Error('密码至少6位数'))
+        callback(new Error("密码至少6位数"));
       } else {
-        callback()
+        callback();
       }
-    }
+    };
     return {
       loginForm: {
-        username: '',
-        password: ''
+        username: "",
+        password: "",
+        verifycode: ""
       },
       loginRules: {
-        username: [{ required: true, trigger: 'blur', validator: validateUsername }],
-        password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+        // username: [
+        //   { required: true, trigger: "blur", validator: validateUsername }
+        // ],
+        password: [
+          { required: true, trigger: "blur", validator: validatePassword }
+        ],
+        verifycode: [{}]
       },
       loading: false,
-      passwordType: 'password',
-      redirect: undefined
-    }
+      passwordType: "password",
+      redirect: undefined,
+      timecount: 60,
+      verifyButtonText: "获取验证码",
+      verifycodeLoad: false
+    };
   },
   watch: {
     $route: {
       handler: function(route) {
-        this.redirect = route.query && route.query.redirect
+        this.redirect = route.query && route.query.redirect;
       },
       immediate: true
     }
   },
   methods: {
     showPwd() {
-      if (this.passwordType === 'password') {
-        this.passwordType = ''
+      if (this.passwordType === "password") {
+        this.passwordType = "";
       } else {
-        this.passwordType = 'password'
+        this.passwordType = "password";
       }
       this.$nextTick(() => {
-        this.$refs.password.focus()
-      })
+        this.$refs.password.focus();
+      });
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
-          this.loading = true
-          this.$store.dispatch('user/login', this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || '/' })
-            this.loading = false
-          }).catch(() => {
-            this.loading = false
-          })
+          this.loading = true;
+          this.$store
+            .dispatch("user/login", this.loginForm)
+            .then(() => {
+              this.$router.push({ path: this.redirect || "/" });
+              this.loading = false;
+            })
+            .catch(() => {
+              this.loading = false;
+            });
         } else {
-          console.log('出错了!!')
-          return false
+          console.log("出错了!!");
+          return false;
         }
-      })
+      });
+    },
+    handleGetVerifyCode() {
+      this.verifyButtonText = this.timecount + "秒后重新获取";
+      this.timecount = this.timecount - 1;
+      if(this.timecount == 0){
+        this.verifyButtonText = "重新获取";
+        this.timecount = 60;
+        return
+      }
+      setTimeout(this.handleGetVerifyCode, 1000);
     }
   }
-}
+};
 </script>
 
 <style lang="scss">
 /* 修复input 背景不协调 和光标变色 */
 /* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
 
-$bg:#283443;
-$light_gray:#fff;
+$bg: #283443;
+$light_gray: #fff;
 $cursor: #fff;
 
 @supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
@@ -166,14 +221,14 @@ $cursor: #fff;
 </style>
 
 <style lang="scss" scoped>
-$bg:#2d3a4b;
-$dark_gray:#889aa4;
-$light_gray:#eee;
+$bg: #2d3a4b;
+$dark_gray: #889aa4;
+$light_gray: #eee;
 
 .login-container {
   min-height: 100%;
   width: 100%;
-  background-color: $bg;
+  background: url("http://i2.tiimg.com/689844/8a66af3216348e85.png"),linear-gradient(to left, #328944, #247cdc);
   overflow: hidden;
 
   .login-form {
@@ -225,6 +280,17 @@ $light_gray:#eee;
     color: $dark_gray;
     cursor: pointer;
     user-select: none;
+  }
+
+  .verify-input {
+    width: 56%;
+  }
+
+  .verify-button {
+    width: 32%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 </style>
