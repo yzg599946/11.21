@@ -163,7 +163,7 @@ export default {
       this.verifyButtonText = this.timecount + "秒后重新获取";
       this.timecount = this.timecount - 1;
       if(this.timecount == 0){
-        this.verifyButtonText = "重新获取";
+        this.verifyButtonText = "点击重新获取";
         this.timecount = 60;
         return
       }
