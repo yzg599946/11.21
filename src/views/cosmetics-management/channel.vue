@@ -2,6 +2,7 @@
     <div class="app-container">
         <div class="filter-container">
             <el-date-picker
+                size="mini"
                 v-model="timeSelectValue"
                 type="datetimerange"
                 :picker-options="pickerOptions"
@@ -10,7 +11,7 @@
                 end-placeholder="结束日期"
                 align="right"
             ></el-date-picker>
-            <el-select v-model="salemanValue" clearable filterable placeholder="业务员">
+            <el-select size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
                 <el-option
                     v-for="item in salemanOptions"
                     :key="item.value"
@@ -18,7 +19,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select v-model="productValue" clearable filterable placeholder="产品">
+            <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
                 <el-option
                     v-for="item in productOptions"
                     :key="item.value"
@@ -26,7 +27,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select v-model="channelValue" clearable filterable placeholder="渠道项目">
+            <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
                 <el-option
                     v-for="item in channelOptions"
                     :key="item.value"
@@ -41,9 +42,9 @@
                 @click="handleSearch"
             >搜索</el-button>
         </div>
-        <el-table border="" fit highlight-current-row :data="list" style="width: 100%;" @cell-click="handleTimeSlot">
-            <el-table-column width="50" align="center">
-                <template slot-scope="scope">
+        <el-table size="mini" border fit highlight-current-row :data="list" style="width: 100%;" @cell-click="handleTimeSlot">
+            <el-table-column fixed width="50" align="center">
+                <template>
                     <i class="el-icon-plus cursor-pointer"></i>
                 </template>
             </el-table-column>

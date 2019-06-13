@@ -2,6 +2,7 @@
     <div class="app-container">
         <div class="filter-container">
             <el-date-picker
+                size="mini"
                 v-model="timeSelectValue"
                 type="datetimerange"
                 :picker-options="pickerOptions"
@@ -10,7 +11,7 @@
                 end-placeholder="结束日期"
                 align="right"
             ></el-date-picker>
-            <el-select v-model="salemanValue" clearable filterable placeholder="业务员">
+            <el-select size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
                 <el-option
                     v-for="item in salemanOptions"
                     :key="item.value"
@@ -18,7 +19,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select v-model="productValue" clearable filterable placeholder="产品">
+            <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
                 <el-option
                     v-for="item in productOptions"
                     :key="item.value"
@@ -26,7 +27,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select v-model="channelValue" clearable filterable placeholder="渠道项目">
+            <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
                 <el-option
                     v-for="item in channelOptions"
                     :key="item.value"
@@ -35,13 +36,14 @@
                 ></el-option>
             </el-select>
             <el-button
+                size="mini"
                 class="filter-item"
                 type="primary"
                 icon="el-icon-search"
                 @click="handleSearch"
             >搜索</el-button>
         </div>
-        <el-table fit highlight-current-row :data="list" style="width: 100%;">
+        <el-table size="mini" fit border :data="list" style="width: 100%;">
             <el-table-column type="index" width="100" align="center"></el-table-column>
             <el-table-column label="省份" width="850" align="center">
                 <template slot-scope="scope">

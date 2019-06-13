@@ -86,9 +86,9 @@ export default {
         excel.export_json_to_excel({
           header: tHeader,
           data,
-          filename: this.filename,
-          autoWidth: this.autoWidth,
-          bookType: this.bookType
+          filename: 'excel',
+          autoWidth: true,
+          bookType: xlsx
         })
         this.downloadLoading = false
       })

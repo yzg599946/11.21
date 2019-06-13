@@ -5,7 +5,6 @@
     <breadcrumb class="breadcrumb-container" />
 
     <div class="right-menu">
-      <label class="avatar-label">欢迎 管理员</label>
       <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper">
           <img :src="avatar+'?imageView2/1/w/80/h/80'" class="user-avatar">
@@ -129,13 +128,6 @@ export default {
           font-size: 12px;
         }
       }
-    }
-    .avatar-label{
-      font-size: 14px;
-      font-weight: 500;
-      position: relative;
-      bottom: 10px;
-      right: 10px;
     }
   }
 }
