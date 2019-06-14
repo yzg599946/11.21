@@ -11,7 +11,7 @@
                 end-placeholder="结束日期"
                 align="right"
             ></el-date-picker>
-            <el-select size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
+            <el-select  class="table-input" size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
                 <el-option
                     v-for="item in salemanOptions"
                     :key="item.value"
@@ -19,7 +19,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
+            <el-select  class="table-input"  size="mini" v-model="productValue" clearable filterable placeholder="产品">
                 <el-option
                     v-for="item in productOptions"
                     :key="item.value"
@@ -27,7 +27,7 @@
                     :value="item.value"
                 ></el-option>
             </el-select>
-            <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
+            <el-select  class="table-input" size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
                 <el-option
                     v-for="item in channelOptions"
                     :key="item.value"
@@ -193,7 +193,7 @@ export default {
   padding-bottom: 10px;
 }
 .table-input {
-  width: 200px;
+  width: 140px;
   padding: 5px 0;
 }
 .filter-container label {

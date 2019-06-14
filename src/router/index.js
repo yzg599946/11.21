@@ -94,13 +94,35 @@ export const constantRoutes = [
   {
     path: '/headline-management',
     component: Layout,
-    redirect: '/headline-management',
-    children: [{
-      path: 'headline-management',
-      name: 'Headline-management',
-      component: () => import('@/views/headline-management/index'),
-      meta: { title: '头条管理', icon: 'toutiao' }
-    }]
+    redirect: '/headline-management/index',
+    name: 'Headline-management',
+    meta: { title: '头条管理', icon: 'toutiao' },
+    children: [
+      {
+        path: 'headline-order',
+        name: 'Headline-order',
+        component: () => import('@/views/headline-management/order'),
+        meta: { title: '订单管理', icon: 'order' }
+      },
+      {
+        path: 'headline-channel',
+        component: () => import('@/views/headline-management/channel'),
+        name: 'Headline-channel',
+        meta: { title: '渠道统计', icon: 'channel' }
+      },
+      {
+        path: 'headline-area',
+        component: () => import('@/views/headline-management/area'),
+        name: 'Headline-area',
+        meta: { title: '地区统计', icon: 'area' }
+      },
+      {
+        path: 'headline-timeslot',
+        component: () => import('@/views/headline-management/timeslot'),
+        name: 'Headline-timeslot',
+        meta: { title: '时段统计', icon: 'timeslot' }
+      }
+    ]
   },
 
   {
@@ -119,12 +141,46 @@ export const constantRoutes = [
     path: '/tencent-management',
     component: Layout,
     redirect: '/tencent-management',
-    children: [{
-      path: 'tencent-management',
-      name: 'Tencent-management',
-      component: () => import('@/views/tencent-management/index'),
-      meta: { title: '腾讯管理', icon: 'qq' }
-    }]
+    meta: { title: '腾讯管理', icon: 'qq' },
+    name: 'Tencent-management',
+    children: [
+      {
+        path: 'tencent-temporaryorder',
+        name: 'Tencent-temporaryorder',
+        component: () => import('@/views/tencent-management/temporaryorder'),
+        meta: { title: '临时订单管理', icon: 'order' }
+      },
+      {
+        path: 'tencent-repellent',
+        component: () => import('@/views/tencent-management/repellent'),
+        name: 'Tencent-repellent',
+        meta: { title: '驱蚊器渠道统计', icon: 'quwenqi' }
+      },
+      {
+        path: 'tencent-apparel',
+        component: () => import('@/views/tencent-management/apparel'),
+        name: 'Tencent-apparel',
+        meta: { title: '服饰订单统计', icon: 'fuzhuang' }
+      },
+      {
+        path: 'tencent-cosmetic',
+        component: () => import('@/views/tencent-management/cosmetic'),
+        name: 'Tencent-cosmetic',
+        meta: { title: '化妆品订单统计', icon: 'huazhuangpin' }
+      },
+      {
+        path: 'tencent-watch',
+        component: () => import('@/views/tencent-management/watch'),
+        name: 'Tencent-watch',
+        meta: { title: '手表订单统计', icon: 'shoubiao' }
+      },
+      {
+        path: 'tencent-watchtimeslot',
+        component: () => import('@/views/tencent-management/watchtimeslot'),
+        name: 'Tencent-watchtimeslot',
+        meta: { title: '手表时段统计', icon: 'timeslot' }
+      }
+    ]
   },
 
   {

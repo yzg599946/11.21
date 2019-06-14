@@ -329,7 +329,7 @@
 <script>
 import { parseTime } from "@/utils";
 import { getOrderList } from "@/api/orderList";
-import { setTimeout } from 'timers';
+import { setTimeout } from "timers";
 
 export default {
   data() {
@@ -543,7 +543,7 @@ export default {
       downloadLoading: false,
       listLoading: true,
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100],  //单页最大显示条数
+      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
       pagesize: 20 //单页内条数
     };
   },
@@ -577,9 +577,6 @@ export default {
     },
     handleEditConfirm(row, column, event) {
       let count = 0;
-      console.log(row);
-      console.log(column);
-      console.log(event);
       this.list.forEach(item => {
         if (item.id == this.currentEditID) {
           this.list[count].productName = this.form.productType;
@@ -594,16 +591,19 @@ export default {
         }
       });
       this.editDialogVisible = false;
+      this.$message({
+        message: "修改成功",
+        type: "success"
+      });
     },
     handleSearch() {
       console.log(this.$router.options.routes);
     },
     //单击复制
-    handleUseful(row, column, cell, event) {
+    handleUseful(row, column, cell, event) {7
       if (this.clickFlag) {
         this.clickFlag = clearTimeout(this.clickFlag);
       }
-
       this.clickFlag = setTimeout(() => {
         let count = 0;
         console.log(row);
@@ -647,7 +647,7 @@ export default {
       setTimeout(() => {
         this.currentPage = val;
         this.listLoading = false;
-      },500);
+      }, 500);
     },
     //导出excel
     handleDownload() {

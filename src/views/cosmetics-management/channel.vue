@@ -1,71 +1,93 @@
 <template>
-    <div class="app-container">
-        <div class="filter-container">
-            <el-date-picker
-                size="mini"
-                v-model="timeSelectValue"
-                type="datetimerange"
-                :picker-options="pickerOptions"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                align="right"
-            ></el-date-picker>
-            <el-select size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
-                <el-option
-                    v-for="item in salemanOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
-                <el-option
-                    v-for="item in productOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
-                <el-option
-                    v-for="item in channelOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-button
-                class="filter-item"
-                type="primary"
-                icon="el-icon-search"
-                @click="handleSearch"
-            >搜索</el-button>
-        </div>
-        <el-table size="mini" border fit highlight-current-row :data="list" style="width: 100%;" @cell-click="handleTimeSlot">
-            <el-table-column fixed width="50" align="center">
-                <template>
-                    <i class="el-icon-plus cursor-pointer"></i>
-                </template>
-            </el-table-column>
-            <el-table-column label="渠道项目" width="850" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.channel }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column label="订单数" width="850" sortable="custom" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.orderCount }}</span>
-                </template>
-            </el-table-column>
-        </el-table>
-        <el-dialog :title="channelTitle" :visible.sync="dialogTableVisible">
-            <el-table :data="gridData">
-                <el-table-column property="timeslot" label="时段" width="400"></el-table-column>
-                <el-table-column property="orderCount" label="订单数" width="400"></el-table-column>
-            </el-table>
-        </el-dialog>
+  <div class="app-container">
+    <div class="filter-container">
+      <el-date-picker
+        size="mini"
+        v-model="timeSelectValue"
+        type="datetimerange"
+        :picker-options="pickerOptions"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        align="right"
+      ></el-date-picker>
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="salemanValue"
+        clearable
+        filterable
+        placeholder="业务员"
+      >
+        <el-option
+          v-for="item in salemanOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="productValue"
+        clearable
+        filterable
+        placeholder="产品"
+      >
+        <el-option
+          v-for="item in productOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="channelValue"
+        clearable
+        filterable
+        placeholder="渠道项目"
+      >
+        <el-option
+          v-for="item in channelOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-search"
+        @click="handleSearch"
+      >搜索</el-button>
     </div>
+    <el-table size="mini" border fit :data="list" style="width: 100%;" @cell-click="handleTimeSlot">
+      <el-table-column fixed width="50" align="center">
+        <template>
+          <i class="el-icon-plus cursor-pointer"></i>
+        </template>
+      </el-table-column>
+      <el-table-column label="渠道项目" width="850" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.channel }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="订单数" width="850" sortable="custom" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.orderCount }}</span>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-dialog :title="channelTitle" :visible.sync="dialogTableVisible">
+      <el-table :data="gridData">
+        <el-table-column property="timeslot" label="时段" width="400"></el-table-column>
+        <el-table-column property="orderCount" label="订单数" width="400"></el-table-column>
+      </el-table>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
@@ -203,19 +225,18 @@ export default {
       productValue: "",
       formLabelWidth: "120px",
       dialogTableVisible: false,
-      channelTitle:""
+      channelTitle: ""
     };
   },
   created() {},
   methods: {
     handleSearch() {},
     handleTimeSlot(row, column, cell, event) {
-        if(column.label == undefined){
-            this.channelTitle = row.channel;
-            this.dialogTableVisible = true;
-        }else{
-
-        }
+      if (column.label == undefined) {
+        this.channelTitle = row.channel;
+        this.dialogTableVisible = true;
+      } else {
+      }
     }
   }
 };
@@ -234,7 +255,12 @@ export default {
   padding: 0 5px;
   font-size: 14px;
 }
-.cursor-pointer{
-    cursor: pointer;
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.table-input {
+  width: 120px;
+  padding: 5px 0;
 }
 </style>

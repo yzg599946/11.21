@@ -3,6 +3,7 @@
     <logo :collapse="isCollapse" />
     <el-scrollbar wrap-class="scrollbar-wrapper">
       <el-menu
+        class="sidebar-list"
         :default-active="activeMenu"
         :collapse="isCollapse"
         :background-color="variables.menuBg"
@@ -55,3 +56,9 @@ export default {
   }
 }
 </script>
+
+<style lang='scss'>
+ .sidebar-list{
+   margin-bottom: 50px;
+ }
+</style>

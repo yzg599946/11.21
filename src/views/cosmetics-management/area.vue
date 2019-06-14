@@ -1,62 +1,69 @@
 <template>
-    <div class="app-container">
-        <div class="filter-container">
-            <el-date-picker
-                size="mini"
-                v-model="timeSelectValue"
-                type="datetimerange"
-                :picker-options="pickerOptions"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                align="right"
-            ></el-date-picker>
-            <el-select size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
-                <el-option
-                    v-for="item in salemanOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
-                <el-option
-                    v-for="item in productOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
-                <el-option
-                    v-for="item in channelOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-button
-                size="mini"
-                class="filter-item"
-                type="primary"
-                icon="el-icon-search"
-                @click="handleSearch"
-            >搜索</el-button>
-        </div>
-        <el-table size="mini" fit border :data="list" style="width: 100%;">
-            <el-table-column type="index" width="100" align="center"></el-table-column>
-            <el-table-column label="省份" width="850" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.province }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column label="订单数" width="850" sortable="custom" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.orderCount }}</span>
-                </template>
-            </el-table-column>
-        </el-table>
+  <div class="app-container">
+    <div class="filter-container">
+      <el-date-picker
+        size="mini"
+        v-model="timeSelectValue"
+        type="datetimerange"
+        :picker-options="pickerOptions"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        align="right"
+      ></el-date-picker>
+      <el-select
+        class="table-input"
+        size="mini"
+        v-model="salemanValue"
+        clearable
+        filterable
+        placeholder="业务员"
+      >
+        <el-option
+          v-for="item in salemanOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select  class="table-input" size="mini" v-model="productValue" clearable filterable placeholder="产品">
+        <el-option
+          v-for="item in productOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select  class="table-input" size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
+        <el-option
+          v-for="item in channelOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-search"
+        @click="handleSearch"
+      >搜索</el-button>
     </div>
+    <el-table size="mini" fit border :data="list" style="width: 100%;">
+      <el-table-column type="index" width="100" align="center"></el-table-column>
+      <el-table-column label="省份" width="850" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.province }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="订单数" width="850" sortable="custom" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.orderCount }}</span>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
 </template>
 
 <script>
@@ -174,7 +181,7 @@ export default {
           label: "李怀西"
         }
       ],
-      salemanValue:"",
+      salemanValue: "",
       timeSelectValue: "",
       channelValue: "",
       productValue: "",
@@ -183,7 +190,7 @@ export default {
   },
   created() {},
   methods: {
-    handleSearch() {},
+    handleSearch() {}
   }
 };
 </script>
@@ -200,5 +207,9 @@ export default {
   font-weight: 500;
   padding: 0 5px;
   font-size: 14px;
+}
+.table-input {
+  width: 120px;
+  padding: 5px 0;
 }
 </style>
