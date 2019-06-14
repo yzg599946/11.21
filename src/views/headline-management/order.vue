@@ -29,7 +29,7 @@
       <el-select
         class="table-input"
         size="mini"
-        v-model="account"
+        v-model="accountValue"
         clearable
         filterable
         placeholder="账户"
@@ -728,10 +728,29 @@ export default {
           label: "颜色4"
         }
       ],
+      packageAttributeOptions:[
+           {
+          value: "选项1",
+          label: "套餐1"
+        },
+        {
+          value: "选项2",
+          label: "套餐2"
+        },
+        {
+          value: "选项3",
+          label: "套餐3"
+        },
+        {
+          value: "选项4",
+          label: "套餐4"
+        }
+      ],
       timeSelectValue: "",
       salemanValue: "",
       channelValue: "",
       productValue: "",
+      accountValue:"",
       usefulValue: "",
       repeatOrderValue: "",
       repeatNamePhoneValue: "",
@@ -929,6 +948,10 @@ export default {
           }
         })
       );
+    },
+    //去除重复项
+    handleReplaceReapetItem(){
+        
     }
   }
 };
