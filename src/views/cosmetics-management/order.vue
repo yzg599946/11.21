@@ -548,9 +548,6 @@ export default {
       this.listLoading = true;
       this.list = getOrderList();
       this.listLoading = false;
-      getOrderList().then(res => {
-        console.log(res);
-      })
     },
 
     //单击复制
