@@ -1,62 +1,93 @@
 <template>
-    <div class="app-container">
-        <div class="filter-container">
-            <el-date-picker
-                size="mini"
-                v-model="timeSelectValue"
-                type="datetimerange"
-                :picker-options="pickerOptions"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                align="right"
-            ></el-date-picker>
-            <el-select  class="table-input" size="mini" v-model="salemanValue" clearable filterable placeholder="业务员">
-                <el-option
-                    v-for="item in salemanOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select  class="table-input"  size="mini" v-model="productValue" clearable filterable placeholder="产品">
-                <el-option
-                    v-for="item in productOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-select  class="table-input" size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
-                <el-option
-                    v-for="item in channelOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                ></el-option>
-            </el-select>
-            <el-button
-                size="mini"
-                class="filter-item"
-                type="primary"
-                icon="el-icon-search"
-                @click="handleSearch"
-            >搜索</el-button>
-        </div>
-        <el-table size="mini" fit border :data="list" style="width: 100%;">
-            <el-table-column type="index" width="100" align="center"></el-table-column>
-            <el-table-column label="省份" width="850" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.timeslot }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column label="订单数" width="850" sortable="custom" align="center">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.orderCount }}</span>
-                </template>
-            </el-table-column>
-        </el-table>
+  <div class="app-container">
+    <div class="filter-container">
+      <el-date-picker
+        size="mini"
+        v-model="timeSelectValue"
+        type="datetimerange"
+        :picker-options="pickerOptions"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        align="right"
+      ></el-date-picker>
+      <el-select
+        class="table-input"
+        size="mini"
+        v-model="salemanValue"
+        clearable
+        filterable
+        placeholder="业务员"
+      >
+        <el-option
+          v-for="item in salemanOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select
+        class="table-input"
+        size="mini"
+        v-model="productValue"
+        clearable
+        filterable
+        placeholder="产品"
+      >
+        <el-option
+          v-for="item in productOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select
+        class="table-input"
+        size="mini"
+        v-model="channelValue"
+        clearable
+        filterable
+        placeholder="渠道项目"
+      >
+        <el-option
+          v-for="item in channelOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-search"
+        @click="handleSearch"
+      >搜索</el-button>
     </div>
+    <el-table size="mini" fit border :data="list" style="width: 100%;">
+      <el-table-column type="index" width="100" align="center"></el-table-column>
+      <el-table-column label="省份" width="850" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.timeslot }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="订单数" width="850" sortable="custom" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.orderCount }}</span>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="pagesizes"
+      :page-size="pagesize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="list.length"
+      class="pagination"
+    ></el-pagination>
+  </div>
 </template>
 
 <script>
@@ -174,16 +205,35 @@ export default {
           label: "李怀西"
         }
       ],
-      salemanValue:"",
+      salemanValue: "",
       timeSelectValue: "",
       channelValue: "",
       productValue: "",
-      formLabelWidth: "120px"
+      formLabelWidth: "120px",
+      currentPage: 1, //当前页
+      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
+      pagesize: 20 //单页内条数
     };
   },
   created() {},
   methods: {
     handleSearch() {},
+    //选择表格尺寸
+    handleSizeChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.pagesize = val;
+        this.listLoading = false;
+      }, 500);
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.currentPage = val;
+        this.listLoading = false;
+      }, 500);
+    }
   }
 };
 </script>
@@ -200,5 +250,9 @@ export default {
   font-weight: 500;
   padding: 0 5px;
   font-size: 14px;
+}
+.pagination {
+  text-align: center;
+  margin-top: 20px;
 }
 </style>

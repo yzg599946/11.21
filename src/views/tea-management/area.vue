@@ -63,6 +63,18 @@
         </template>
       </el-table-column>
     </el-table>
+
+        <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="pagesizes"
+      :page-size="pagesize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="list.length"
+      class="pagination"
+    ></el-pagination>
+
   </div>
 </template>
 
@@ -185,12 +197,31 @@ export default {
       timeSelectValue: "",
       channelValue: "",
       productValue: "",
-      formLabelWidth: "120px"
+      formLabelWidth: "120px",
+      currentPage: 1, //当前页
+      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
+      pagesize: 20 //单页内条数
     };
   },
   created() {},
   methods: {
-    handleSearch() {}
+    handleSearch() {},
+        //选择表格尺寸
+    handleSizeChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.pagesize = val;
+        this.listLoading = false;
+      }, 500);
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.currentPage = val;
+        this.listLoading = false;
+      }, 500);
+    }
   }
 };
 </script>
@@ -211,5 +242,9 @@ export default {
 .table-input {
   width: 120px;
   padding: 5px 0;
+}
+.pagination {
+  text-align: center;
+  margin-top: 20px;
 }
 </style>

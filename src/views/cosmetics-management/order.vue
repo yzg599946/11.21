@@ -12,12 +12,14 @@
         size="mini"
       ></el-date-picker>
       <el-select
-        class="table-input"
+        multiple
         size="mini"
         v-model="salemanValue"
+        @change="salemanChange"
         clearable
         filterable
         placeholder="业务员"
+        :style="salemanWidth"
       >
         <el-option
           v-for="item in salemanOptions"
@@ -26,14 +28,7 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="channelValue"
-        clearable
-        filterable
-        placeholder="渠道项目"
-      >
+      <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
         <el-option
           v-for="item in channelOptions"
           :key="item.value"
@@ -41,14 +36,7 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="productValue"
-        clearable
-        filterable
-        placeholder="产品"
-      >
+      <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
         <el-option
           v-for="item in productOptions"
           :key="item.value"
@@ -65,6 +53,44 @@
         v-model="phoneNumberInput"
         clearable
       ></el-input>
+      <el-select size="mini" v-model="usefulValue" clearable filterable placeholder="是否有效单">
+        <el-option
+          v-for="item in usefulOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select size="mini" v-model="repeatOrderValue" clearable filterable placeholder="是否重单">
+        <el-option
+          v-for="item in repeatOrderOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select
+        size="mini"
+        v-model="repeatNamePhoneValue"
+        clearable
+        filterable
+        placeholder="重复姓名手机"
+      >
+        <el-option
+          v-for="item in repeatNamePhoneOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
+      <el-select size="mini" v-model="exportjdValue" clearable filterable placeholder="是否已导入京东">
+        <el-option
+          v-for="item in exportjdOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
       <el-input size="mini" class="table-input" placeholder="起始ID" v-model="minIdInput" clearable></el-input>
       <label>至</label>
       <el-input size="mini" class="table-input" placeholder="结束ID" v-model="maxIdInput" clearable></el-input>
@@ -83,66 +109,7 @@
         v-model="maxPriceInput"
         clearable
       ></el-input>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="usefulValue"
-        clearable
-        filterable
-        placeholder="是否有效单"
-      >
-        <el-option
-          v-for="item in usefulOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        ></el-option>
-      </el-select>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="repeatOrderValue"
-        clearable
-        filterable
-        placeholder="是否重单"
-      >
-        <el-option
-          v-for="item in repeatOrderOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        ></el-option>
-      </el-select>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="repeatNamePhoneValue"
-        clearable
-        filterable
-        placeholder="重复姓名手机"
-      >
-        <el-option
-          v-for="item in repeatNamePhoneOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        ></el-option>
-      </el-select>
-      <el-select
-        class="table-input"
-        size="mini"
-        v-model="exportjdValue"
-        clearable
-        filterable
-        placeholder="是否已导入京东"
-      >
-        <el-option
-          v-for="item in exportjdOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        ></el-option>
-      </el-select>
+
       <el-button
         size="mini"
         class="filter-item"
@@ -159,13 +126,20 @@
         @click="handleDownload"
       >导出excel</el-button>
       <el-button size="mini" class="filter-item" type="primary" icon="el-icon-download">导出为德邦</el-button>
-      <el-button size="mini" class="filter-item" type="primary" icon="el-icon-upload2">批量导入京东</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-upload2"
+        @click="handleBatchImportIntoJD"
+      >批量导入京东</el-button>
     </div>
     <el-table
       size="mini"
       v-loading="listLoading"
       @row-dblclick="handleEdit"
       @cell-click="handleUseful"
+      @selection-change="handleSelectChange"
       fit
       border
       max-height="680"
@@ -323,13 +297,27 @@
       value
       style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
     >
+
+    <el-dialog
+      class="import-jd"
+      size="mini"
+      title="选择导入方式"
+      :visible.sync="importTypeDialogVisible"
+      width="30%"
+      center
+    >
+      <div style="text-align:center;">
+        <el-button @click="handleImportSky">导入航空件</el-button>
+        <el-button @click="handleImportLand">导入陆运件</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { parseTime } from "@/utils";
 import { getOrderList } from "@/api/orderList";
-import { setTimeout } from "timers";
+import { setTimeout, clearTimeout } from "timers";
 
 export default {
   data() {
@@ -373,7 +361,7 @@ export default {
         },
         {
           value: "选项2",
-          label: "李怀西"
+          label: "王怀东"
         },
         {
           value: "选项3",
@@ -539,29 +527,75 @@ export default {
         address: ""
       },
       currentEditID: 0,
-      clickFlag: null, // 单击定时器
       downloadLoading: false,
       listLoading: true,
       currentPage: 1, //当前页
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20 //单页内条数
+      pagesize: 20, //单页内条数
+      salemanWidth: "",
+      importTypeDialogVisible: false,
+      multipleSelection: [],
+      clickFlag: null // 单击定时器
     };
   },
   created() {
     this.getDataList();
   },
+  computed: {},
   methods: {
     // 获取数据列表
     getDataList() {
       this.listLoading = true;
       this.list = getOrderList();
       this.listLoading = false;
+      getOrderList().then(res => {
+        console.log(res);
+      })
     },
+
+    //单击复制
+    handleUseful(row, column, cell, event) {
+      if(this.clickFlag){
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        console.log("鼠标单击");
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "是否可用") {
+          this.list.forEach(item => {
+            if (item.id == row.id) {
+              this.list[count].isUseful = !this.list[count].isUseful;
+            } else {
+              count++;
+            }
+          });
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
+    },
+
     // 双击编辑
     handleEdit(e) {
       if (this.clickFlag) {
-        this.clickFlag = clearTimeout(this.clickFlag);
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
       }
+      console.log("鼠标双击");
       this.form.productType = e.productName;
       this.form.name = e.name;
       this.form.color = e.color;
@@ -596,43 +630,7 @@ export default {
         type: "success"
       });
     },
-    handleSearch() {
-      console.log(this.$router.options.routes);
-    },
-    //单击复制
-    handleUseful(row, column, cell, event) {7
-      if (this.clickFlag) {
-        this.clickFlag = clearTimeout(this.clickFlag);
-      }
-      this.clickFlag = setTimeout(() => {
-        let count = 0;
-        console.log(row);
-        console.log(column);
-        if (column.label == "是否可用") {
-          this.list.forEach(item => {
-            if (item.id == row.id) {
-              this.list[count].isUseful = !this.list[count].isUseful;
-            } else {
-              count++;
-            }
-          });
-        } else {
-          let copyText = event.target.innerText;
-          if (copyText != "") {
-            var inputElement = document.getElementById("copy_content");
-            inputElement.value = copyText;
-            inputElement.select();
-            document.execCommand("Copy");
-            this.$message({
-              message: "复制成功",
-              type: "success"
-            });
-          } else {
-            this.$message.error("复制失败，内容可能为空");
-          }
-        }
-      }, 300);
-    },
+    handleSearch() {},
     //选择表格尺寸
     handleSizeChange(val) {
       this.listLoading = true;
@@ -714,6 +712,35 @@ export default {
           }
         })
       );
+    },
+    //业务员选择器宽度自适应
+    salemanChange() {
+      const inputWidth = 178; //选择器原始宽度 178px
+      let optionWidth = this.salemanValue.length * 65 + 97; //一个标签宽度65px 右边预留97px
+      this.salemanWidth =
+        optionWidth > inputWidth
+          ? "width:" + optionWidth + "px"
+          : "width:" + inputWidth + "px";
+    },
+    //选择发生改变
+    handleSelectChange(selection) {
+      this.multipleSelection = selection;
+    },
+    //批量导入京东
+    handleBatchImportIntoJD() {
+      if (!this.multipleSelection.length) {
+        this.$message.error("未选择任何数据");
+      } else {
+        this.importTypeDialogVisible = true;
+      }
+    },
+    handleImportSky() {
+      this.$message.success("操作成功");
+      this.importTypeDialogVisible = false;
+    },
+    handleImportLand() {
+      this.$message.success("操作成功");
+      this.importTypeDialogVisible = false;
     }
   }
 };
@@ -724,13 +751,12 @@ export default {
   padding-bottom: 10px;
 }
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 .filter-container label {
   font-weight: 500;
-  padding: 0 5px;
-  font-size: 14px;
+  font-size: 12px;
 }
 .normal-edit {
   width: 200px;

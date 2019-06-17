@@ -81,8 +81,20 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-dialog :title="channelTitle" :visible.sync="dialogTableVisible">
-      <el-table :data="gridData">
+
+      <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="pagesizes"
+      :page-size="pagesize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="list.length"
+      class="pagination"
+    ></el-pagination>
+
+    <el-dialog size="mini" :title="channelTitle" :visible.sync="dialogTableVisible">
+      <el-table size="mini" :data="gridData">
         <el-table-column property="timeslot" label="时段" width="400"></el-table-column>
         <el-table-column property="orderCount" label="订单数" width="400"></el-table-column>
       </el-table>
@@ -225,7 +237,10 @@ export default {
       productValue: "",
       formLabelWidth: "120px",
       dialogTableVisible: false,
-      channelTitle: ""
+      channelTitle: "",
+      currentPage: 1, //当前页
+      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
+      pagesize: 20 //单页内条数
     };
   },
   created() {},
@@ -237,6 +252,21 @@ export default {
         this.dialogTableVisible = true;
       } else {
       }
+    },
+        handleSizeChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.pagesize = val;
+        this.listLoading = false;
+      }, 500);
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.currentPage = val;
+        this.listLoading = false;
+      }, 500);
     }
   }
 };
@@ -262,5 +292,14 @@ export default {
 .table-input {
   width: 120px;
   padding: 5px 0;
+}
+
+.detail-dialog{
+  width: 840px;
+}
+
+.pagination {
+  text-align: center;
+  margin-top: 20px;
 }
 </style>

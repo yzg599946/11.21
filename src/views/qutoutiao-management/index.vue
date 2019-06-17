@@ -288,7 +288,6 @@
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
       :total="list.length"
-      hide-on-single-page="true"
       class="pagination"
     ></el-pagination>
 
@@ -608,23 +607,23 @@ export default {
       accountOptions: [
         {
           value: "选项1",
-          label: "渠道1"
+          label: "账户1"
         },
         {
           value: "选项2",
-          label: "渠道2"
+          label: "账户2"
         },
         {
           value: "选项3",
-          label: "渠道3"
+          label: "账户3"
         },
         {
           value: "选项4",
-          label: "渠道4"
+          label: "账户4"
         },
         {
           value: "选项5",
-          label: "渠道5"
+          label: "账户5"
         }
       ],
       productOptions: [
@@ -729,6 +728,28 @@ export default {
           label: "颜色4"
         }
       ],
+      packageAttributeOptions: [
+        {
+          value: "选项1",
+          label: "套餐1"
+        },
+        {
+          value: "选项2",
+          label: "套餐2"
+        },
+        {
+          value: "选项3",
+          label: "套餐3"
+        },
+        {
+          value: "选项4",
+          label: "套餐4"
+        },
+        {
+          value: "选项5",
+          label: "套餐5"
+        }
+      ],
       timeSelectValue: "",
       salemanValue: "",
       channelValue: "",
@@ -761,7 +782,8 @@ export default {
       listLoading: true,
       currentPage: 1, //当前页
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20 //单页内条数
+      pagesize: 20, //单页内条数
+      account: ""
     };
   },
   created() {
@@ -930,7 +952,8 @@ export default {
           }
         })
       );
-    }
+    },
+    handleReplaceReapetItem() {}
   }
 };
 </script>
