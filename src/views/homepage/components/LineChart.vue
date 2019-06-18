@@ -1,33 +1,52 @@
 <template>
-  <div style="width: 1500px;height:400px;"/>
+  <div style="height:400px;width:100%"/>
 </template>
 
 <script>
+import { clearInterval, setInterval } from "timers";
+import { getLineChartData } from "@/api/lineChartData";
+
 var echarts = require("echarts");
 
 export default {
   data() {
     return {
-      timeData: []
+      timeData: null,
+      timer: null,
+      dataSource: [],
+      chart: null
     };
   },
+  watch: {},
   created() {},
   mounted() {
-    this.initCharts();
+    if (!this.chart) {
+      this.initCharts();
+    } else {
+      if (this.timer) {
+        clearInterval(this.timer);
+      } else {
+        this.timer = setInterval(() => {
+          this.initCharts();
+        }, 1200000);
+      }
+    }
+  },
+  destroyed() {
+    clearInterval(this.timer);
   },
   methods: {
-    initCharts() {
-      this.chart = echarts.init(this.$el, "macarons");
-      this.setOptions();
-    },
-    setOptions() {
-      //获取当前时间
+    getData() {
+      let lineChartdata = getLineChartData();
+      this.dataSource = lineChartdata;
+
+      //获取时间
+      this.timeData = [];
       let now = new Date();
       let nowDate = now.toLocaleDateString();
       let nowHour = now.getHours();
       this.timeData.push(nowDate);
-      for (let index = 0; index < nowHour; index++) {
-        console.log(nowHour);
+      for (let index = 1; index <= nowHour; index++) {
         let timeItem;
         if (index < 10) {
           timeItem = "0" + index + ":00";
@@ -36,14 +55,25 @@ export default {
         }
         this.timeData.push(timeItem);
       }
-
+    },
+    initCharts() {
+      this.getData(); //获取数据
+      this.chart = echarts.init(this.$el); //创建实例
+      this.setOptions(); //设置数据
+      window.onresize = this.chart.resize; //自适应
+    },
+    setOptions() {
       this.chart.setOption({
         tooltip: {
           trigger: "axis"
         },
         legend: {
           color: ["#F58080", "#47D8BE", "#F9A589"],
-          data: ["手表", "驱蚊器", "化妆品"],
+          data: [
+            this.dataSource[0].name,
+            this.dataSource[1].name,
+            this.dataSource[2].name
+          ],
           left: "center",
           bottom: "bottom"
         },
@@ -88,29 +118,9 @@ export default {
         },
         series: [
           {
-            name: "手表",
+            name: this.dataSource[0].name,
             type: "line",
-            data: [
-              105,
-              77,
-              39,
-              37,
-              50,
-              69,
-              142,
-              135,
-              157,
-              302,
-              215,
-              151,
-              224,
-              236,
-              237,
-              231,
-              149,
-              133,
-              58
-            ],
+            data: this.dataSource[0].data,
             color: "#F58080",
             lineStyle: {
               normal: {
@@ -151,29 +161,9 @@ export default {
             smooth: true
           },
           {
-            name: "驱蚊器",
+            name: this.dataSource[1].name,
             type: "line",
-            data: [
-              3,
-              6,
-              3,
-              11,
-              14,
-              6,
-              15,
-              20,
-              21,
-              10,
-              5,
-              10,
-              3,
-              2,
-              2,
-              8,
-              2,
-              1,
-              0
-            ],
+            data: this.dataSource[1].data,
             lineStyle: {
               normal: {
                 width: 5,
@@ -213,9 +203,9 @@ export default {
             smooth: true
           },
           {
-            name: "化妆品",
+            name: this.dataSource[2].name,
             type: "line",
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+            data: this.dataSource[2].data,
             lineStyle: {
               normal: {
                 width: 5,

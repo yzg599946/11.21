@@ -1,6 +1,8 @@
 <template>
   <div class="homepage-box">
-    <img style="width: 750px; height: 226px" :src="url">
+    <div class="homepage-image">
+      <img :src="url">
+    </div>
     <line-chart/>
   </div>
 </template>
@@ -27,5 +29,28 @@ export default {
   justify-content: center;
   align-items: center;
   padding: 50px;
+  height: 90vh;
+}
+.homepage-image {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 40%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.homepage-image img {
+  position: absolute;
+  width: 40%;
+}
+
+.mobile .homepage-box {
+  padding: 10px;
+}
+
+.mobile .homepage-image img {
+  width: 90%;
 }
 </style>
