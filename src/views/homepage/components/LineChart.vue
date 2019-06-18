@@ -22,14 +22,13 @@ export default {
   mounted() {
     if (!this.chart) {
       this.initCharts();
+    }
+    if (this.timer) {
+      clearInterval(this.timer);
     } else {
-      if (this.timer) {
-        clearInterval(this.timer);
-      } else {
-        this.timer = setInterval(() => {
-          this.initCharts();
-        }, 1200000);
-      }
+      this.timer = setInterval(() => {
+        this.initCharts();
+      }, 1800000);
     }
   },
   destroyed() {

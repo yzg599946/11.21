@@ -52,7 +52,7 @@
           class="verify-input"
           ref="verifycode"
           v-model="loginForm.verifycode"
-          placeholder="请输入验证码"
+          placeholder="验证码"
           name="verifycode"
           type="text"
           tabindex="3"
@@ -283,14 +283,15 @@ $light_gray: #eee;
   }
 
   .verify-input {
-    width: 56%;
+    width: 30%;
   }
 
   .verify-button {
-    width: 32%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    float: right;
+    margin: 12px 5px;
   }
 }
 </style>
