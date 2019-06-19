@@ -1,5 +1,5 @@
 <template>
-  <div class="wscn-http404-container">
+  <div :class="device" class="wscn-http404-container">
     <div class="wscn-http404">
       <div class="pic-404">
         <img class="pic-404__parent" src="@/assets/404_images/404.png" alt="404">
@@ -11,27 +11,54 @@
         <div class="bullshit__oops">出错了!</div>
         <div class="bullshit__headline">{{ message }}</div>
         <div class="bullshit__info">请检查您输入的URL是否正确，或单击下面的按钮返回主页。</div>
-        <a href="" class="bullshit__return-home">返回首页</a>
+        <a href class="bullshit__return-home">返回首页</a>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import ResizeMixin from '@/layout/mixin/ResizeHandler'
 
 export default {
-  name: 'Page404',
+  name: "Page404",
+  data(){
+    return {
+      device:""
+    }
+  },
+  created(){
+    this.device = this.$store.state.app.device;
+  },
+  mixins: [ResizeMixin],
   computed: {
     message() {
-      return '网站管理员说您无法进入此页面...'
+      return "网站管理员说您无法进入此页面...";
+    },
+    deviceVal() {
+      return this.$store.state.app.device;
+    }
+  },
+  watch:{
+    deviceVal(newVal, oldVal){
+      this.device = newVal;
     }
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
-.wscn-http404-container{
-  transform: translate(-50%,-50%);
+.mobile .pic-404 {
+  width: 300px!important;
+}
+.mobile .wscn-http404 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.wscn-http404-container {
+  transform: translate(-50%, -50%);
   position: absolute;
   top: 40%;
   left: 50%;

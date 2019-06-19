@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div class="filter-container">
+    <div v-if="device!='mobile'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
         type="datetimerange"
@@ -126,7 +126,13 @@
         :loading="downloadLoading"
         @click="handleDownload"
       >导出excel</el-button>
-      <el-button size="mini" class="filter-item" type="primary" icon="el-icon-download" @click="handleExportDB">导出为德邦</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-download"
+        @click="handleExportDB"
+      >导出为德邦</el-button>
       <el-button
         size="mini"
         class="filter-item"
@@ -136,11 +142,8 @@
       >批量导入京东</el-button>
     </div>
     <!-- 移动端 功能按钮 -->
-    <div class="filter-mobile">
+    <div v-else class="filter-mobile">
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
-      <van-button type="info" size="small" @click="handleDownload">导出excel</van-button>
-      <van-button type="info" size="small" @click="handleExportDB">导出为德邦</van-button>
-      <van-button type="info" size="small" @click="handleBatchImportIntoJD">批量导入京东</van-button>
     </div>
     <!-- 产品列表 -->
     <el-table
@@ -151,11 +154,11 @@
       @selection-change="handleSelectChange"
       fit
       border
-      max-height="680"
+      :max-height="tableMaxHeight"
       :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
       style="width: 100%;"
     >
-      <el-table-column fixed type="selection" align="center" width="50"></el-table-column>
+      <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
       <el-table-column label="ID" prop="id" align="center" width="80">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
@@ -247,6 +250,7 @@
     </el-table>
     <!-- PC端 分页器 -->
     <el-pagination
+      v-if="device!='mobile'"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       :current-page="currentPage"
@@ -257,7 +261,7 @@
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
-    <div class="mobile-pagination">
+    <div v-else class="mobile-pagination">
       <van-pagination
         v-model="currentPage"
         :total-items="list.length"
@@ -317,7 +321,7 @@
       value
       style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
     >
-    <!-- 导入京东窗口 -->
+    <!--导入京东窗口 -->
     <el-dialog
       class="import-jd"
       size="mini"
@@ -332,10 +336,17 @@
       </div>
     </el-dialog>
     <!-- 移动端 搜索界面 -->
-    <div class="search-container">
+    <div v-if="device=='mobile'" class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
         <div style="height:100vh;width:100vw;">
-          <van-nav-bar title="搜索" left-text="返回" left-arrow @click-left="handleSearchMobileCancel"/>
+          <van-nav-bar
+            title="搜索"
+            left-text="返回"
+            right-text="清空"
+            left-arrow
+            @click-left="handleSearchMobileCancel"
+            @click-right="handleSearchMobileClearAll"
+          />
           <van-cell-group>
             <van-cell
               @click="handleChooseDateStartMobile"
@@ -412,7 +423,13 @@
             />
           </van-cell-group>
           <div class="mobile-search">
-            <van-button type="info" size="large">搜索</van-button>
+            <van-button
+              type="info"
+              :loading="mobileSearchButtonLoading"
+              :disabled="mobileSearchButtonLoading"
+              size="large"
+              @click="handleMobileSearch"
+            >搜索</van-button>
           </div>
         </div>
       </van-popup>
@@ -420,17 +437,31 @@
       <van-popup v-model="mobileDatePickerShow" position="bottom">
         <van-datetime-picker
           v-model="currentDate"
-          type="datetime"
-          :min-date="minDate"
-          :max-date="maxDate"
+          type="date"
+          :min-date="datetimePickerType=='start'?minDate:minDateEnd"
+          :max-date="datetimePickerType=='end'?maxDate:maxDateStart"
           @change="datetimePickerChange"
           @confirm="datetimePickerConfirm"
+          @cancel="datetimePickerCancel"
         />
       </van-popup>
       <!--业务员选择弹窗-->
       <van-popup v-model="mobileSalesmanPickerShow" position="bottom">
+        <van-search
+          clearable
+          show-action
+          placeholder="请输入搜索关键词"
+          v-model="salesmanSearchValue"
+          list="salesmanIde"
+        >
+          <div slot="action" @click="handleSearchSalesmanItem">搜索</div>
+        </van-search>
+        <datalist id="salesmanIde">
+          <option v-for="item in salemanOptions" :key="item.value" :value="item.label"/>
+        </datalist>
         <van-picker
           show-toolbar
+          :default-index="salesPickerCurrentSelect"
           :columns="salesmanColumns"
           @cancel="mobileSalesmanPickerShow = false"
           @confirm="salesmanPickerConfirm"
@@ -438,8 +469,21 @@
       </van-popup>
       <!--渠道选择弹窗-->
       <van-popup v-model="mobileChannelPickerShow" position="bottom">
+        <van-search
+          clearable
+          show-action
+          placeholder="请输入搜索关键词"
+          v-model="channelSearchValue"
+          list="channelIde"
+        >
+          <div slot="action" @click="handleSearchChannelItem">搜索</div>
+        </van-search>
+        <datalist id="channelIde">
+          <option v-for="item in channelOptions" :key="item.value" :value="item.label"/>
+        </datalist>
         <van-picker
           show-toolbar
+          :default-index="channelPickerCurrentSelect"
           :columns="channelColumns"
           @cancel="mobileChannelPickerShow = false"
           @confirm="channelPickerConfirm"
@@ -447,8 +491,21 @@
       </van-popup>
       <!--产品选择弹窗-->
       <van-popup v-model="mobileProductPickerShow" position="bottom">
+        <van-search
+          clearable
+          show-action
+          placeholder="请输入搜索关键词"
+          v-model="productSearchValue"
+          list="productIde"
+        >
+          <div slot="action" @click="handleSearchProductItem">搜索</div>
+        </van-search>
+        <datalist id="productIde">
+          <option v-for="item in productOptions" :key="item.value" :value="item.label"/>
+        </datalist>
         <van-picker
           show-toolbar
+          :default-index="productPickerCurrentSelect"
           :columns="productColumns"
           @cancel="mobileProductPickerShow = false"
           @confirm="productPickerConfirm"
@@ -509,8 +566,12 @@ import {
   DatetimePicker,
   Picker,
   Field,
-  Icon
+  Icon,
+  Toast,
+  ActionSheet,
+  Search
 } from "vant";
+import { fail } from "assert";
 
 Vue.use(Pagination);
 Vue.use(Button);
@@ -522,6 +583,9 @@ Vue.use(DatetimePicker);
 Vue.use(Picker);
 Vue.use(Field);
 Vue.use(Icon);
+Vue.use(Toast);
+Vue.use(ActionSheet);
+Vue.use(Search);
 
 export default {
   data() {
@@ -653,7 +717,7 @@ export default {
           label: "否"
         }
       ],
-      usefulColumns: ["是", "否"],
+      usefulColumns: ["有效单", "无效单"],
       repeatOrderOptions: [
         {
           value: "选项1",
@@ -664,7 +728,7 @@ export default {
           label: "否"
         }
       ],
-      repeatOrderColumns: ["是", "否"],
+      repeatOrderColumns: ["重单", "不重单"],
       repeatNamePhoneOptions: [
         {
           value: "选项1",
@@ -675,7 +739,7 @@ export default {
           label: "否"
         }
       ],
-      repeatNamePhoneColumns: ["是", "否"],
+      repeatNamePhoneColumns: ["重复", "不重复"],
       exportjdOptions: [
         {
           value: "选项1",
@@ -686,7 +750,7 @@ export default {
           label: "否"
         }
       ],
-      exportJDColumns: ["是", "否"],
+      exportJDColumns: ["已导入", "未导入"],
       colorOptions: [
         {
           value: "选项1",
@@ -754,6 +818,8 @@ export default {
       minDate: new Date(1950, 10, 1),
       maxDate: new Date(),
       currentDate: new Date(),
+      minDateEnd: new Date(),
+      maxDateStart: new Date(),
       timePickerStartValue: "请选择",
       timePickerEndValue: "请选择",
       salesmanMobileValue: "请选择",
@@ -765,13 +831,38 @@ export default {
       exportJDMobileValue: "请选择",
       nameMobileValue: "",
       colorMobileValue: "",
-      phoneMobileValue: ""
+      phoneMobileValue: "",
+      device: "",
+      salesmanSearchValue: "",
+      channelSearchValue: "",
+      productSearchValue: "",
+      salesPickerCurrentSelect: 0,
+      channelPickerCurrentSelect: 0,
+      productPickerCurrentSelect: 0,
+      datetimePickerType: "",
+      mobileSearchButtonLoading: false,
+      tableMaxHeight: 0
     };
   },
   created() {
     this.getDataList();
+    this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
+    this.getHeight();
   },
-  computed: {},
+  destroyed() {
+    window.removeEventListener("resize", this.getHeight);
+  },
+  computed: {
+    deviceVal() {
+      return this.$store.state.app.device;
+    }
+  },
+  watch: {
+    deviceVal(newVal, oldVal) {
+      this.device = newVal;
+    }
+  },
   methods: {
     //获取数据列表
     getDataList() {
@@ -779,14 +870,19 @@ export default {
       this.list = getOrderList();
       this.listLoading = false;
     },
+    //表格高度自适应
+    getHeight() {
+      let otherHeight = this.device == "desktop" ? 250 : 200;
+      this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
     //单击复制
     handleUseful(row, column, cell, event) {
+      if ((this.device = "mobile")) return;
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;
       }
       this.clickFlag = setTimeout(() => {
-        console.log("鼠标单击");
         let count = 0;
         if (column.label == undefined) return;
         if (column.label == "是否可用") {
@@ -816,11 +912,11 @@ export default {
     },
     // 双击编辑
     handleEdit(e) {
+      if (this.device == "mobile") return;
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;
       }
-      console.log("鼠标双击");
       this.form.productType = e.productName;
       this.form.name = e.name;
       this.form.color = e.color;
@@ -954,6 +1050,8 @@ export default {
     handleSelectChange(selection) {
       this.multipleSelection = selection;
     },
+    //导入德邦
+    handleExportDB() {},
     //批量导入京东
     handleBatchImportIntoJD() {
       if (!this.multipleSelection.length) {
@@ -962,15 +1060,19 @@ export default {
         this.importTypeDialogVisible = true;
       }
     },
+    //空运
     handleImportSky() {
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
+    //陆运
     handleImportLand() {
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
-    //移动端事件
+
+    /* 移动端事件 */
+
     //分页器
     handlePageChange() {},
     //点击搜索
@@ -985,6 +1087,39 @@ export default {
         this.mobileSearchShow = !this.mobileSearchShow;
       }
     },
+    //清空所选
+    handleSearchMobileClearAll() {
+      this.timePickerStartValue == "请选择"
+        ? ""
+        : (this.timePickerStartValue = "请选择"),
+        this.timePickerEndValue == "请选择"
+          ? ""
+          : (this.timePickerEndValue = "请选择"),
+        this.salesmanMobileValue == "请选择"
+          ? ""
+          : (this.salesmanMobileValue = "请选择"),
+        this.channelMobileValue == "请选择"
+          ? ""
+          : (this.channelMobileValue = "请选择"),
+        this.productMobileValue == "请选择"
+          ? ""
+          : (this.productMobileValue = "请选择"),
+        this.usefulMobileValue == "请选择"
+          ? ""
+          : (this.usefulMobileValue = "请选择"),
+        this.repeatOrderMobileValue == "请选择"
+          ? ""
+          : (this.repeatOrderMobileValue = "请选择"),
+        this.repeatNamePhoneMobileValue == "请选择"
+          ? ""
+          : (this.repeatNamePhoneMobileValue = "请选择"),
+        this.exportJDMobileValue == "请选择"
+          ? ""
+          : (this.exportJDMobileValue = "请选择"),
+        this.nameMobileValue == "" ? "" : (this.nameMobileValue = ""),
+        this.colorMobileValue == "" ? "" : (this.colorMobileValue = ""),
+        this.phoneMobileValue == "" ? "" : (this.phoneMobileValue = "");
+    },
     //选择开始日期
     handleChooseDateStartMobile() {
       if (!this.mobileDatePickerShow) {
@@ -992,7 +1127,7 @@ export default {
           let maxDate_ = this.timePickerEndValue;
           maxDate_ = maxDate_.replace(/-/g, "/");
           let date = new Date(maxDate_);
-          this.maxDate = date;
+          this.maxDateStart = date;
         }
         this.datetimePickerType = "start";
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
@@ -1005,7 +1140,7 @@ export default {
           let maxDate_ = this.timePickerStartValue;
           maxDate_ = maxDate_.replace(/-/g, "/");
           let date = new Date(maxDate_);
-          this.minDate = date;
+          this.minDateEnd = date;
         }
         this.datetimePickerType = "end";
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
@@ -1016,16 +1151,16 @@ export default {
     datetimePickerConfirm(res) {
       if (this.mobileDatePickerShow) {
         if (this.datetimePickerType == "start") {
-          this.timePickerStartValue = res.toLocaleString("chinese", {
-            hour12: false
-          });
+          this.timePickerStartValue = res.toLocaleDateString();
         } else {
-          this.timePickerEndValue = res.toLocaleString("chinese", {
-            hour12: false
-          });
+          this.timePickerEndValue = res.toLocaleDateString();
         }
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
       }
+    },
+    //取消选择日期
+    datetimePickerCancel() {
+      this.mobileDatePickerShow = !this.mobileDatePickerShow;
     },
     //选择业务员
     handleChooseSalesman() {
@@ -1073,7 +1208,25 @@ export default {
     //确认选择业务员
     salesmanPickerConfirm(res) {
       if (this.mobileSalesmanPickerShow) {
-        this.salesmanMobileValue = res;
+        if (this.salesmanMobileValue == "请选择") {
+          this.salesmanMobileValue = res;
+        } else {
+          if (this.salesmanMobileValue.indexOf(",") != -1) {
+            let salesmanArr = new Array();
+            salesmanArr = this.salesmanMobileValue.split(",");
+            if (salesmanArr.indexOf(res) == -1) {
+              this.salesmanMobileValue = this.salesmanMobileValue + "," + res;
+            } else {
+              Toast("请勿重复选择");
+            }
+          } else {
+            if (this.salesmanMobileValue != res) {
+              this.salesmanMobileValue = this.salesmanMobileValue + "," + res;
+            } else {
+              Toast("请勿重复选择");
+            }
+          }
+        }
         this.mobileSalesmanPickerShow = !this.mobileSalesmanPickerShow;
       }
     },
@@ -1120,8 +1273,50 @@ export default {
         this.mobileExportJDPickerShow = !this.mobileExportJDPickerShow;
       }
     },
-    handleExportDB(){
-      console.log(this.$store.state.app.device)
+    //导入京东方式
+    mobileExportJDSelect(item) {
+      this.mobileExportJDDialogShow = false;
+      Toast.success(item.name + "成功");
+    },
+    //取消导入京东
+    mobileExportJDCancel() {},
+    //业务员快捷搜索
+    handleSearchSalesmanItem() {
+      this.salesPickerCurrentSelect = this.salesmanColumns.indexOf(
+        this.salesmanSearchValue
+      );
+    },
+    //渠道快捷搜索
+    handleSearchChannelItem() {
+      this.channelPickerCurrentSelect = this.channelColumns.indexOf(
+        this.channelSearchValue
+      );
+    },
+    //产品快捷搜索
+    handleSearchProductItem() {
+      this.productPickerCurrentSelect = this.productColumns.indexOf(
+        this.productSearchValue
+      );
+    },
+    //开始搜索
+    handleMobileSearch() {
+      this.mobileSearchButtonLoading = true;
+      setTimeout(() => {
+        this.mobileSearchButtonLoading = false;
+        this.mobileSearchShow = false;
+      }, 2000);
+      console.log("开始时间:" + this.timePickerStartValue);
+      console.log("结束时间:" + this.timePickerEndValue);
+      console.log("业务员:" + this.salesmanMobileValue);
+      console.log("渠道项目:" + this.channelMobileValue);
+      console.log("产品:" + this.productMobileValue);
+      console.log("是否有效单:" + this.usefulMobileValue);
+      console.log("是否重单:" + this.repeatOrderMobileValue);
+      console.log("重复手机姓名:" + this.repeatNamePhoneMobileValue);
+      console.log("是否已导入京东:" + this.exportJDMobileValue);
+      console.log("姓名:" + this.nameMobileValue);
+      console.log("颜色:" + this.colorMobileValue);
+      console.log("电话:" + this.phoneMobileValue);
     }
   }
 };
@@ -1130,18 +1325,6 @@ export default {
 <style lang="scss" scoped>
 .filter-container {
   margin-bottom: 10px;
-}
-
-.filter-mobile {
-  display: none;
-}
-
-.search-container {
-  display: none;
-}
-
-.mobile-pagination{
-  display: none;
 }
 
 .table-input {
@@ -1172,33 +1355,15 @@ export default {
   margin-top: 20px;
 }
 
-.mobile .filter-container {
-  display: none;
-}
-
-.mobile .pagination {
-  display: none;
-}
-
-.mobile .filter-mobile {
+.filter-mobile button {
   margin-bottom: 10px;
-  display: block;
 }
 
-.mobile .search-container {
-  display: block;
-}
-
-.mobile .mobile-pagination{
+.mobile-pagination {
   margin-top: 10px;
-  display: block;
 }
 
 .mobile-search {
-  position: fixed;
-  bottom: 0px;
   padding: 10px;
-  width: 100%;
-  box-shadow: 0 0 10px #e5e5e5;
 }
 </style>

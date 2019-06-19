@@ -240,7 +240,7 @@ export default {
 
 <style lang="scss" scoped>
 .filter-container {
-  padding-bottom: 10px;
+  margin-bottom: 10px;
 }
 .table-input {
   width: 140px;
