@@ -61,4 +61,7 @@ export default {
  .sidebar-list{
    margin-bottom: 50px;
  }
+ .mobile .sidebar-container .el-scrollbar__wrap{
+   margin-right: 0!important;
+ }
 </style>

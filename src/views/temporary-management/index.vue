@@ -159,7 +159,7 @@
       style="width: 100%;"
     >
       <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
-      <el-table-column label="ID" prop="id" align="center" width="80">
+      <el-table-column label="ID" prop="id" align="center" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
@@ -866,7 +866,7 @@ export default {
     },
     //单击复制
     handleUseful(row, column, cell, event) {
-      if ((this.device = "mobile")) return;
+      if ((this.device == "mobile")) return;
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;
