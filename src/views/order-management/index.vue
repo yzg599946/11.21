@@ -1,29 +1,13 @@
 <template>
-  <orderTable :tableList="list"/>
+    
 </template>
 
 <script>
-import orderTable from "@/components/orderTable";
-import { getOrderList } from "@/api/orderList";
-
-export default {
-  components: {
-    orderTable
-  },
-  data() {
-    return {
-      list: [
-      ]
-    };
-  },
-  created() {
-    this.list = getOrderList();
-  },
-  methods:{
-    
-  }
-};
+    export default {
+        name: "index"
+    }
 </script>
 
 <style scoped>
+
 </style>

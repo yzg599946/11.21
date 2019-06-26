@@ -161,7 +161,7 @@
       style="width: 100%;user-select:none;"
     >
       <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
-      <el-table-column label="ID" prop="id" align="center" width="120">
+      <el-table-column label="ID" prop="id" align="center" width="80">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
@@ -171,37 +171,37 @@
           <span>{{ scope.row.channel }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="产品名称" width="150px" sortable="custom" align="center">
+      <el-table-column label="产品名称" width="130px" sortable="custom" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.productName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="颜色名称" width="150px" sortable="custom" align="center">
+      <el-table-column label="颜色名称" width="130px" sortable="custom" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.color }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="名字" width="120px" align="center">
+      <el-table-column label="名字" width="100px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="手机" width="150px" align="center">
+      <el-table-column label="手机" width="130px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.phoneNumber }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="数量" width="100px" align="center">
+      <el-table-column label="数量" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.count }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="总价" width="100px" align="center">
+      <el-table-column label="总价" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.price }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="重单" width="100px" align="center">
+      <el-table-column label="重单" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.repeatOrder }}</span>
         </template>
@@ -216,12 +216,12 @@
           <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" width="150px" align="center">
+      <el-table-column label="备注" width="140px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.remarks }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否可用" width="150px" align="center">
+      <el-table-column label="是否可用" width="100px" align="center">
         <template slot-scope="scope">
           <span
             style="cursor:pointer"
@@ -229,17 +229,17 @@
           >{{ scope.row.isUseful?'有效单':'无效单' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="导入物流状态" width="150px" align="center">
+      <el-table-column label="导入物流状态" width="120px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.logisticsState }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="业务员" width="100px" align="center">
+      <el-table-column label="业务员" width="90px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.salesman }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作员" width="100px" align="center">
+      <el-table-column label="操作员" width="90px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.operator }}</span>
         </template>
@@ -1097,13 +1097,13 @@ export default {
           data.forEach(index => {
             count = count + parseInt(index.count);
           });
-          sums[index] = count + "个";
+          sums[index] = count;
         }
         if (column.label == "总价") {
           data.forEach(index => {
             price = price + parseInt(index.price);
           });
-          sums[index] = price + "元";
+          sums[index] = price;
         }
       });
       return sums;
@@ -1112,7 +1112,12 @@ export default {
     /* 移动端事件 */
 
     //分页器
-    handlePageChange() {},
+    handlePageChange() {
+      this.listLoading = true;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 600);
+    },
     //点击搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {

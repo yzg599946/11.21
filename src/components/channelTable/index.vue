@@ -133,6 +133,7 @@
             @click-left="handleDetailCancel"
           />
           <van-cell-group>
+            <van-cell title="时段" value="数量"/>
             <van-cell title="00:00~01:00" value="1113单"/>
             <van-cell title="00:00~01:00" value="2131单"/>
             <van-cell title="00:00~01:00" value="422单"/>

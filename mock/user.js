@@ -13,13 +13,13 @@ const users = {
     roles: ['admin'],
     introduction: 'I am a super administrator',
     avatar: 'http://i2.tiimg.com/689844/ec5ce3a030c3a20b.png',
-    name: 'Super Admin'
+    name: '超级管理员'
   },
   'editor-token': {
     roles: ['editor'],
     introduction: 'I am an editor',
     avatar: 'http://i2.tiimg.com/689844/ec5ce3a030c3a20b.png',
-    name: 'Normal Editor'
+    name: '观察者'
   }
 }
 
@@ -31,7 +31,6 @@ export default [
     response: config => {
       const { username } = config.body
       const token = tokens[username]
-
       // mock error
       if (!token) {
         return {

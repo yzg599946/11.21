@@ -5,7 +5,8 @@ import { resetRouter } from '@/router'
 const state = {
   token: getToken(),
   name: '',
-  avatar: ''
+  avatar: '',
+  menu: ''
 }
 
 const mutations = {
@@ -17,18 +18,21 @@ const mutations = {
   },
   SET_AVATAR: (state, avatar) => {
     state.avatar = avatar
+  },
+  SET_ROLES: (state, roles) => {
+    state.roles = roles
   }
 }
 
 const actions = {
   // user login
   login({ commit }, userInfo) {
-    const { username, password } = userInfo
+    const { username, password, verification } = userInfo
     return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
+      login({ username: username.trim(), password: password, verification: verification }).then(response => {
         const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
+        commit('SET_TOKEN', data)
+        setToken(data)
         resolve()
       }).catch(error => {
         reject(error)
@@ -41,14 +45,14 @@ const actions = {
     return new Promise((resolve, reject) => {
       getInfo(state.token).then(response => {
         const { data } = response
-
         if (!data) {
           reject('Verification failed, please Login again.')
         }
-
-        const { name, avatar } = data
-
-        commit('SET_NAME', name)
+        const avatar = 'http://i2.tiimg.com/689844/ec5ce3a030c3a20b.png'
+        const user = data.user
+        const roles = data.menu
+        commit('SET_ROLES', roles)
+        commit('SET_NAME', user)
         commit('SET_AVATAR', avatar)
         resolve(data)
       }).catch(error => {
@@ -59,8 +63,10 @@ const actions = {
 
   // user logout
   logout({ commit, state }) {
+    console.log(1)
     return new Promise((resolve, reject) => {
       logout(state.token).then(() => {
+        console.log('logout')
         commit('SET_TOKEN', '')
         removeToken()
         resetRouter()

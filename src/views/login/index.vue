@@ -38,25 +38,25 @@
           name="password"
           tabindex="2"
           auto-complete="on"
-          @keyup.enter.native="handleLogin"
         />
         <span class="show-pwd" @click="showPwd">
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
         </span>
       </el-form-item>
-      <el-form-item prop="verifycode" class="verify-item">
+      <el-form-item prop="verification" class="verify-item">
         <span class="svg-container">
           <svg-icon icon-class="verify"/>
         </span>
         <el-input
           class="verify-input"
-          ref="verifycode"
-          v-model="loginForm.verifycode"
+          ref="verification"
+          v-model="loginForm.verification"
           placeholder="验证码"
-          name="verifycode"
+          name="verification"
           type="text"
           tabindex="3"
           auto-complete="on"
+          @keyup.enter.native="handleLogin"
         />
         <el-button
           class="verify-button"
@@ -79,18 +79,12 @@
 
 <script>
 import { validUsername } from "@/utils/validate";
+import { getVerifyCode } from "@/api/user";
 import { clearTimeout, clearInterval } from "timers";
 
 export default {
   name: "Login",
   data() {
-    // const validateUsername = (rule, value, callback) => {
-    //   if (!validUsername(value)) {
-    //     callback(new Error("请输入正确的用户名"));
-    //   } else {
-    //     callback();
-    //   }
-    // };
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
         callback(new Error("密码至少6位数"));
@@ -98,20 +92,36 @@ export default {
         callback();
       }
     };
+    const validateUsername = (rule, value, callback) => {
+      if (value.length < 1){
+        callback(new Error("请输入用户名"));
+      }else{
+        callback();
+      }
+    };
+    const validateVerification = (rule, value, callback) => {
+      if (value.length < 1){
+        callback(new Error("请输入验证码"));
+      }else{
+        callback();
+      }
+    }
     return {
       loginForm: {
         username: "",
         password: "",
-        verifycode: ""
+        verification: ""
       },
       loginRules: {
-        // username: [
-        //   { required: true, trigger: "blur", validator: validateUsername }
-        // ],
+        username: [
+          { required: true, trigger: "blur", validator: validateUsername }
+        ],
         password: [
           { required: true, trigger: "blur", validator: validatePassword }
         ],
-        verifycode: [{}]
+        verification: [
+          { required: true, trigger: "blur", validator: validateVerification }
+        ]
       },
       loading: false,
       passwordType: "password",
@@ -160,14 +170,18 @@ export default {
       });
     },
     handleGetVerifyCode() {
+      getVerifyCode(this.loginForm.username);
+      this.time();
+    },
+    time() {
       this.verifyButtonText = this.timecount + "秒后重新获取";
       this.timecount = this.timecount - 1;
-      if(this.timecount == 0){
+      if (this.timecount == 0) {
         this.verifyButtonText = "点击重新获取";
         this.timecount = 60;
-        return
+        return;
       }
-      setTimeout(this.handleGetVerifyCode, 1000);
+      setTimeout(this.time, 1000);
     }
   }
 };
@@ -228,7 +242,8 @@ $light_gray: #eee;
 .login-container {
   min-height: 100%;
   width: 100%;
-  background: url("http://i2.tiimg.com/689844/8a66af3216348e85.png"),linear-gradient(to left, #328944, #247cdc);
+  background: url("http://i2.tiimg.com/689844/8a66af3216348e85.png"),
+    linear-gradient(to left, #328944, #247cdc);
   overflow: hidden;
 
   .login-form {
