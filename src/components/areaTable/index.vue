@@ -245,6 +245,7 @@
 
 <script>
 import Vue from "vue";
+import { getSalesmanList, getChannelList, getProductList } from "@/api/orderList";
 import {
   Pagination,
   Button,
@@ -260,7 +261,6 @@ import {
   ActionSheet,
   Search
 } from "vant";
-import { fail } from "assert";
 
 Vue.use(Pagination);
 Vue.use(Button);
@@ -277,8 +277,8 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-    name:"areaTable",
-    props:["tableList"],
+  name: "areaTable",
+  props: ["tableList"],
   data() {
     return {
       list: [],
@@ -313,91 +313,12 @@ export default {
           }
         ]
       },
-      channelOptions: [
-        {
-          value: "选项1",
-          label: "渠道1"
-        },
-        {
-          value: "选项2",
-          label: "渠道2"
-        },
-        {
-          value: "选项3",
-          label: "渠道3"
-        },
-        {
-          value: "选项4",
-          label: "渠道4"
-        },
-        {
-          value: "选项5",
-          label: "渠道5"
-        }
-      ],
-      channelColumns: ["渠道1", "渠道2", "渠道3", "渠道4", "渠道5", "渠道6"],
-      productOptions: [
-        {
-          value: "选项1",
-          label: "产品1"
-        },
-        {
-          value: "选项2",
-          label: "产品2"
-        },
-        {
-          value: "选项3",
-          label: "产品3"
-        },
-        {
-          value: "选项4",
-          label: "产品4"
-        },
-        {
-          value: "选项5",
-          label: "产品5"
-        }
-      ],
-      productColumns: [
-        "产品1",
-        "产品2",
-        "产品3",
-        "产品4",
-        "产品5",
-        "产品6",
-        "产品7",
-        "产品8"
-      ],
-      salemanOptions: [
-        {
-          value: "选项1",
-          label: "李怀西"
-        },
-        {
-          value: "选项2",
-          label: "王怀东"
-        },
-        {
-          value: "选项3",
-          label: "李怀西"
-        },
-        {
-          value: "选项4",
-          label: "李怀西"
-        },
-        {
-          value: "选项5",
-          label: "李怀西"
-        }
-      ],
-      salesmanColumns: [
-        "李怀西",
-        "王怀东",
-        "李怀西",
-        "李怀西",
-        "李怀西",
-        "李怀西"
-      ],
+      channelOptions: [],
+      channelColumns: [],
+      productOptions: [],
+      productColumns: [],
+      salemanOptions: [],
+      salesmanColumns: [],
       salemanValue: "",
       timeSelectValue: "",
       channelValue: "",
@@ -434,8 +355,13 @@ export default {
   },
   created() {
     this.list = this.tableList;
-    this.listLoading = false;
+    setTimeout(() => {
+      this.listLoading = false;
+    }, 1000);
     this.device = this.$store.state.app.device;
+    this.getSalesman();
+    this.getChannel();
+    this.getProduct();
   },
   computed: {
     deviceVal() {
@@ -448,6 +374,48 @@ export default {
     }
   },
   methods: {
+    // 获取业务员列表
+    getSalesman() {
+      getSalesmanList().then(res => {
+        const salesmanList = res.data;
+        salesmanList.forEach(salesmanItem => {
+          const salesmanObject = {
+            value: salesmanItem.name,
+            label: salesmanItem.name
+          };
+          this.salemanOptions.push(salesmanObject);
+          this.salesmanColumns.push(salesmanItem.name);
+        });
+      });
+    },
+    // 获取渠道列表
+    getChannel() {
+      getChannelList().then(res => {
+        const channelList = res.data;
+        channelList.forEach(channelItem => {
+          const channelObject = {
+            value: channelItem.name,
+            label: channelItem.name
+          };
+          this.channelOptions.push(channelObject);
+          this.channelColumns.push(channelItem.name);
+        });
+      });
+    },
+    // 获取产品列表
+    getProduct() {
+      getProductList().then(res => {
+        const productList = res.data;
+        productList.forEach(productItem => {
+          const productObject = {
+            value: productItem.name,
+            label: productItem.name
+          };
+          this.productOptions.push(productObject);
+          this.productColumns.push(productItem.name);
+        });
+      });
+    },
     handleSearch() {},
     //选择表格尺寸
     handleSizeChange(val) {

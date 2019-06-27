@@ -130,11 +130,6 @@ export default {
         });
         this.orderTableData = countdataList;
       });
-      //获取曲线图数据
-      getEchartData().then(res => {
-        const echartData = res;
-        console.log(echartData)
-      })
     }
   }
 };

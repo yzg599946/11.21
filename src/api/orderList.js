@@ -2,35 +2,57 @@ import request from '@/utils/request'
 
 /* 外链订单 */
 
-// 手表订单
-export function getOuterChainOrderWatch() {
+// 获取手表订单列表
+export function getOuterChainOrderWatch(data) {
   return request({
     url: '/admin/watch/order',
-    methond: 'post'
+    method: 'post',
+    data
+  })
+}
+
+// 修改手表订单信息
+export function editOuterChainOrderWatch(data) {
+  return request({
+    url: '/admin/watch/order/update',
+    method: 'post',
+    data
   })
 }
 
 // 地区统计
-export function getAreaStatisticsWatch() {
+export function getAreaStatisticsWatch(data) {
   return request({
     url: '/admin/watch/region',
-    methond: 'post'
+    method: 'post',
+    data
   })
 }
 
 // 渠道统计
-export function getChannelStatisticsWatch() {
+export function getChannelStatisticsWatch(data) {
   return request({
     url: 'admin/watch/channel',
-    methond: 'post'
+    method: 'post',
+    data
+  })
+}
+
+// 渠道时段统计
+export function getChannelTimeslotWatch(data) {
+  return request({
+    url: 'admin/watch/time',
+    method: 'post',
+    data
   })
 }
 
 // 时段统计
-export function getTimeslotStatisticsWatch() {
+export function getTimeslotStatisticsWatch(data) {
   return request({
     url: 'admin/watch/time',
-    methond: 'post'
+    method: 'post',
+    data
   })
 }
 
@@ -38,7 +60,7 @@ export function getTimeslotStatisticsWatch() {
 export function getOuterChainOrderRepellent() {
   return request({
     url: '/admin/repellent/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -46,7 +68,7 @@ export function getOuterChainOrderRepellent() {
 export function getAreaStatisticsRepellent() {
   return request({
     url: '/admin/repellent/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -54,7 +76,7 @@ export function getAreaStatisticsRepellent() {
 export function getChannelStatisticsRepellent() {
   return request({
     url: 'admin/repellent/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -62,7 +84,7 @@ export function getChannelStatisticsRepellent() {
 export function getTimeslotStatisticsRepellent() {
   return request({
     url: 'admin/repellent/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -70,7 +92,7 @@ export function getTimeslotStatisticsRepellent() {
 export function getOuterChainOrderHeater() {
   return request({
     url: '/admin/heater/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -78,7 +100,7 @@ export function getOuterChainOrderHeater() {
 export function getAreaStatisticsHeater() {
   return request({
     url: '/admin/heater/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -86,7 +108,7 @@ export function getAreaStatisticsHeater() {
 export function getChannelStatisticsHeater() {
   return request({
     url: 'admin/heater/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -94,7 +116,7 @@ export function getChannelStatisticsHeater() {
 export function getTimeslotStatisticsHeater() {
   return request({
     url: 'admin/heater/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -102,7 +124,7 @@ export function getTimeslotStatisticsHeater() {
 export function getOuterChainOrderClothes() {
   return request({
     url: '/admin/clothes/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -110,7 +132,7 @@ export function getOuterChainOrderClothes() {
 export function getAreaStatisticsClothes() {
   return request({
     url: '/admin/clothes/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -118,7 +140,7 @@ export function getAreaStatisticsClothes() {
 export function getChannelStatisticsClothes() {
   return request({
     url: 'admin/clothes/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -126,7 +148,7 @@ export function getChannelStatisticsClothes() {
 export function getTimeslotStatisticsClothes() {
   return request({
     url: 'admin/clothes/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -134,7 +156,7 @@ export function getTimeslotStatisticsClothes() {
 export function getOuterChainOrderTea() {
   return request({
     url: '/admin/tea/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -142,7 +164,7 @@ export function getOuterChainOrderTea() {
 export function getAreaStatisticsTea() {
   return request({
     url: '/admin/tea/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -150,7 +172,7 @@ export function getAreaStatisticsTea() {
 export function getChannelStatisticsTea() {
   return request({
     url: 'admin/tea/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -158,7 +180,7 @@ export function getChannelStatisticsTea() {
 export function getTimeslotStatisticsTea() {
   return request({
     url: 'admin/tea/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -166,7 +188,7 @@ export function getTimeslotStatisticsTea() {
 export function getOuterChainOrderTelescope() {
   return request({
     url: '/admin/telescope/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -174,7 +196,7 @@ export function getOuterChainOrderTelescope() {
 export function getAreaStatisticsTelescope() {
   return request({
     url: '/admin/telescope/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -182,7 +204,7 @@ export function getAreaStatisticsTelescope() {
 export function getChannelStatisticsTelescope() {
   return request({
     url: 'admin/telescope/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -190,7 +212,7 @@ export function getChannelStatisticsTelescope() {
 export function getTimeslotStatisticsTelescope() {
   return request({
     url: 'admin/telescope/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -198,7 +220,7 @@ export function getTimeslotStatisticsTelescope() {
 export function getOuterChainOrderShaver() {
   return request({
     url: '/admin/shaver/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -206,7 +228,7 @@ export function getOuterChainOrderShaver() {
 export function getAreaStatisticsShaver() {
   return request({
     url: '/admin/shaver/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -214,7 +236,7 @@ export function getAreaStatisticsShaver() {
 export function getChannelStatisticsShaver() {
   return request({
     url: 'admin/shaver/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -222,7 +244,7 @@ export function getChannelStatisticsShaver() {
 export function getTimeslotStatisticsShaver() {
   return request({
     url: 'admin/shaver/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -230,7 +252,7 @@ export function getTimeslotStatisticsShaver() {
 export function getOuterChainOrderIgbracelet() {
   return request({
     url: '/admin/igbracelet/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -238,7 +260,7 @@ export function getOuterChainOrderIgbracelet() {
 export function getAreaStatisticsIgbracelet() {
   return request({
     url: '/admin/igbracelet/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -246,7 +268,7 @@ export function getAreaStatisticsIgbracelet() {
 export function getChannelStatisticsIgbracelet() {
   return request({
     url: 'admin/igbracelet/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -254,7 +276,7 @@ export function getChannelStatisticsIgbracelet() {
 export function getTimeslotStatisticsIgbracelet() {
   return request({
     url: 'admin/igbracelet/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -262,7 +284,7 @@ export function getTimeslotStatisticsIgbracelet() {
 export function getOuterChainOrderCosmetic() {
   return request({
     url: '/admin/cosmetic/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -270,7 +292,7 @@ export function getOuterChainOrderCosmetic() {
 export function getAreaStatisticsCosmetic() {
   return request({
     url: '/admin/cosmetic/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -278,7 +300,7 @@ export function getAreaStatisticsCosmetic() {
 export function getChannelStatisticsCosmetic() {
   return request({
     url: 'admin/cosmetic/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -286,7 +308,7 @@ export function getChannelStatisticsCosmetic() {
 export function getTimeslotStatisticsCosmetic() {
   return request({
     url: 'admin/cosmetic/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -294,7 +316,7 @@ export function getTimeslotStatisticsCosmetic() {
 export function getOuterChainOrderTemporary() {
   return request({
     url: '/admin/temporary/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -302,7 +324,7 @@ export function getOuterChainOrderTemporary() {
 export function getAreaStatisticsTemporary() {
   return request({
     url: '/admin/temporary/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -310,7 +332,7 @@ export function getAreaStatisticsTemporary() {
 export function getChannelStatisticsTemporary() {
   return request({
     url: 'admin/temporary/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -318,7 +340,7 @@ export function getChannelStatisticsTemporary() {
 export function getTimeslotStatisticsTemporary() {
   return request({
     url: 'admin/temporary/time',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -326,7 +348,7 @@ export function getTimeslotStatisticsTemporary() {
 export function getOuterChainOrderBriefs() {
   return request({
     url: '/admin/briefs/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -334,7 +356,7 @@ export function getOuterChainOrderBriefs() {
 export function getAreaStatisticsBriefs() {
   return request({
     url: '/admin/briefs/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -342,7 +364,7 @@ export function getAreaStatisticsBriefs() {
 export function getChannelStatisticsBriefs() {
   return request({
     url: 'admin/briefs/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -350,7 +372,39 @@ export function getChannelStatisticsBriefs() {
 export function getTimeslotStatisticsBriefs() {
   return request({
     url: 'admin/briefs/time',
-    methond: 'post'
+    method: 'post'
+  })
+}
+
+// 业务员下拉菜单
+export function getSalesmanList() {
+  return request({
+    url: '/admin/user/idAndName',
+    method: 'post'
+  })
+}
+
+// 渠道下拉菜单
+export function getChannelList() {
+  return request({
+    url: '/admin/composite/channel/parent',
+    method: 'post'
+  })
+}
+
+// 产品下拉菜单
+export function getProductList() {
+  return request({
+    url: '/admin/composite/product/list',
+    method: 'post'
+  })
+}
+
+// 规格下拉菜单
+export function getColorList() {
+  return request({
+    url: '/admin/composite/color/list',
+    method: 'post'
   })
 }
 
@@ -360,7 +414,7 @@ export function getTimeslotStatisticsBriefs() {
 export function getTencentOrderList() {
   return request({
     url: '/admin/tencent/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -370,7 +424,7 @@ export function getTencentOrderList() {
 export function getToutiaoOrderList() {
   return request({
     url: '/admin/tt/order',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -378,7 +432,7 @@ export function getToutiaoOrderList() {
 export function getToutiaoAreaStatistics() {
   return request({
     url: '/admin/tt/region',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -386,7 +440,7 @@ export function getToutiaoAreaStatistics() {
 export function getToutiaoChannelStatistics() {
   return request({
     url: '/admin/tt/channel',
-    methond: 'post'
+    method: 'post'
   })
 }
 
@@ -394,6 +448,16 @@ export function getToutiaoChannelStatistics() {
 export function getToutiaoTimeslotStatistics() {
   return request({
     url: '/admin/tt/time',
-    methond: 'post'
+    method: 'post'
+  })
+}
+
+/* 趣头条订单 */
+
+// 订单列表
+export function getQutoutiaoOrderList() {
+  return request({
+    url: '/admin/qtt/order',
+    method: 'post'
   })
 }

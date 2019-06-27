@@ -133,12 +133,8 @@
             @click-left="handleDetailCancel"
           />
           <van-cell-group>
-            <van-cell title="时段" value="数量"/>
-            <van-cell title="00:00~01:00" value="1113单"/>
-            <van-cell title="00:00~01:00" value="2131单"/>
-            <van-cell title="00:00~01:00" value="422单"/>
-            <van-cell title="00:00~01:00" value="4535单"/>
-            <van-cell title="00:00~01:00" value="151单"/>
+            <van-cell title="时段" value="订单数"/>
+            <van-cell v-for="item in gridData" :key="item.timeslot" :title="item.timeslot" :value="item.orderCount"/>
           </van-cell-group>
         </div>
       </van-popup>
@@ -278,6 +274,12 @@
 <script>
 import Vue from "vue";
 import {
+  getSalesmanList,
+  getChannelList,
+  getProductList,
+  getChannelTimeslotWatch
+} from "@/api/orderList";
+import {
   Pagination,
   Button,
   Popup,
@@ -344,105 +346,14 @@ export default {
           }
         ]
       },
-      channelOptions: [
-        {
-          value: "选项1",
-          label: "渠道1"
-        },
-        {
-          value: "选项2",
-          label: "渠道2"
-        },
-        {
-          value: "选项3",
-          label: "渠道3"
-        },
-        {
-          value: "选项4",
-          label: "渠道4"
-        },
-        {
-          value: "选项5",
-          label: "渠道5"
-        }
-      ],
-      productOptions: [
-        {
-          value: "选项1",
-          label: "产品1"
-        },
-        {
-          value: "选项2",
-          label: "产品2"
-        },
-        {
-          value: "选项3",
-          label: "产品3"
-        },
-        {
-          value: "选项4",
-          label: "产品4"
-        },
-        {
-          value: "选项5",
-          label: "产品5"
-        }
-      ],
-      productColumns: [
-        "产品1",
-        "产品2",
-        "产品3",
-        "产品4",
-        "产品5",
-        "产品6",
-        "产品7",
-        "产品8"
-      ],
-      channelColumns: ["渠道1", "渠道2", "渠道3", "渠道4", "渠道5", "渠道6"],
-      salemanOptions: [
-        {
-          value: "选项1",
-          label: "李怀西"
-        },
-        {
-          value: "选项2",
-          label: "王怀东"
-        },
-        {
-          value: "选项3",
-          label: "李怀西"
-        },
-        {
-          value: "选项4",
-          label: "李怀西"
-        },
-        {
-          value: "选项5",
-          label: "李怀西"
-        }
-      ],
-      salesmanColumns: [
-        "李怀西",
-        "王怀东",
-        "李怀西",
-        "李怀西",
-        "李怀西",
-        "李怀西"
-      ],
-      gridData: [
-        {
-          timeslot: "00:00-00:59",
-          orderCount: "546"
-        },
-        {
-          timeslot: "01:00-01:59",
-          orderCount: "96"
-        },
-        {
-          timeslot: "02:00-02:59",
-          orderCount: "24"
-        }
-      ],
+      productOptions: [],
+      productColumns: [],
+      channelOptions: [],
+      channelColumns: [],
+      channelColumns: [],
+      salemanOptions: [],
+      salesmanColumns: [],
+      gridData: [],
       salemanValue: "",
       timeSelectValue: "",
       channelValue: "",
@@ -482,8 +393,13 @@ export default {
   },
   created() {
     this.list = this.tableList;
-    this.listLoading = false;
+    setTimeout(() => {
+      this.listLoading = false;
+    }, 1000);
     this.device = this.$store.state.app.device;
+    this.getSalesman();
+    this.getChannel();
+    this.getProduct();
   },
   computed: {
     deviceVal() {
@@ -496,9 +412,63 @@ export default {
     }
   },
   methods: {
+    // 获取业务员列表
+    getSalesman() {
+      getSalesmanList().then(res => {
+        const salesmanList = res.data;
+        salesmanList.forEach(salesmanItem => {
+          const salesmanObject = {
+            value: salesmanItem.name,
+            label: salesmanItem.name
+          };
+          this.salemanOptions.push(salesmanObject);
+          this.salesmanColumns.push(salesmanItem.name);
+        });
+      });
+    },
+    // 获取渠道列表
+    getChannel() {
+      getChannelList().then(res => {
+        const channelList = res.data;
+        channelList.forEach(channelItem => {
+          const channelObject = {
+            value: channelItem.name,
+            label: channelItem.name
+          };
+          this.channelOptions.push(channelObject);
+          this.channelColumns.push(channelItem.name);
+        });
+      });
+    },
+    // 获取产品列表
+    getProduct() {
+      getProductList().then(res => {
+        const productList = res.data;
+        productList.forEach(productItem => {
+          const productObject = {
+            value: productItem.name,
+            label: productItem.name
+          };
+          this.productOptions.push(productObject);
+          this.productColumns.push(productItem.name);
+        });
+      });
+    },
     handleSearch() {},
     handleTimeSlot(row, column, cell, event) {
+      this.gridData = [];
       this.channelTitle = row.channel;
+      getChannelTimeslotWatch(this.channelTitle).then(res => {
+        const channelTimeDataList = res.data.rows;
+        channelTimeDataList.forEach(channelTimeDataItem => {
+          const { timeCount, tNum } = channelTimeDataItem;
+          const channelTimeObject = {
+            timeslot: timeCount,
+            orderCount: tNum
+          };
+          this.gridData.push(channelTimeObject);
+        });
+      });
       if (this.device == "mobile") {
         if (column.label == undefined) {
           this.mobileDetailShow = true;

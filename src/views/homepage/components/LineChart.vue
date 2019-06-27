@@ -4,15 +4,16 @@
 
 <script>
 import { clearInterval, setInterval } from "timers";
-import { getLineChartData } from "@/api/lineChartData";
+import { getEchartData } from "@/api/homepage";
+import { constants } from "crypto";
+import { Promise } from "q";
+import { resolve } from "path";
 
 var echarts = require("echarts");
 
 export default {
   data() {
     return {
-      timeData: null,
-      timer: null,
       dataSource: [],
       chart: null
     };
@@ -20,46 +21,17 @@ export default {
   watch: {},
   created() {},
   mounted() {
-    if (!this.chart) {
-      this.initCharts();
-    }
-    if (this.timer) {
-      clearInterval(this.timer);
-    } else {
-      this.timer = setInterval(() => {
-        this.initCharts();
-      }, 1800000);
-    }
-  },
-  destroyed() {
-    clearInterval(this.timer);
+    this.initCharts();
   },
   methods: {
-    getData() {
-      let lineChartdata = getLineChartData();
-      this.dataSource = lineChartdata;
-
-      //获取时间
-      this.timeData = [];
-      let now = new Date();
-      let nowDate = now.toLocaleDateString();
-      let nowHour = now.getHours();
-      this.timeData.push(nowDate);
-      for (let index = 1; index <= nowHour; index++) {
-        let timeItem;
-        if (index < 10) {
-          timeItem = "0" + index + ":00";
-        } else {
-          timeItem = index + ":00";
-        }
-        this.timeData.push(timeItem);
-      }
-    },
     initCharts() {
-      this.getData(); //获取数据
-      this.chart = echarts.init(this.$el); //创建实例
-      this.setOptions(); //设置数据
-      window.onresize = this.chart.resize; //自适应
+      getEchartData().then(res => {
+        let lineChartdata = res.data; //获取数据
+        this.dataSource = lineChartdata;
+        this.chart = echarts.init(this.$el); //创建实例
+        this.setOptions(); //设置数据
+        window.onresize = this.chart.resize; //自适应
+      });
     },
     setOptions() {
       this.chart.setOption({
@@ -69,9 +41,9 @@ export default {
         legend: {
           color: ["#F58080", "#47D8BE", "#F9A589"],
           data: [
-            this.dataSource[0].name,
-            this.dataSource[1].name,
-            this.dataSource[2].name
+            this.dataSource["0"].name,
+            this.dataSource["1"].name,
+            this.dataSource["2"].name
           ],
           left: "center",
           bottom: "bottom"
@@ -117,9 +89,9 @@ export default {
         },
         series: [
           {
-            name: this.dataSource[0].name,
+            name: this.dataSource["0"].name,
             type: "line",
-            data: this.dataSource[0].data,
+            data: this.dataSource["0"].data,
             color: "#F58080",
             lineStyle: {
               normal: {
@@ -160,9 +132,9 @@ export default {
             smooth: true
           },
           {
-            name: this.dataSource[1].name,
+            name: this.dataSource["1"].name,
             type: "line",
-            data: this.dataSource[1].data,
+            data: this.dataSource["1"].data,
             lineStyle: {
               normal: {
                 width: 5,
@@ -202,9 +174,9 @@ export default {
             smooth: true
           },
           {
-            name: this.dataSource[2].name,
+            name: this.dataSource["2"].name,
             type: "line",
-            data: this.dataSource[2].data,
+            data: this.dataSource["2"].data,
             lineStyle: {
               normal: {
                 width: 5,

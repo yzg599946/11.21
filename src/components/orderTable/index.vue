@@ -568,6 +568,12 @@
 <script>
 import Vue from "vue";
 import { parseTime } from "@/utils";
+import {
+  getSalesmanList,
+  getChannelList,
+  getProductList,
+  getColorList
+} from "@/api/orderList";
 import { setTimeout, clearTimeout } from "timers";
 import {
   Pagination,
@@ -636,109 +642,32 @@ export default {
           }
         ]
       },
-      salemanOptions: [
-        {
-          value: "选项1",
-          label: "李怀西"
-        },
-        {
-          value: "选项2",
-          label: "王怀东"
-        },
-        {
-          value: "选项3",
-          label: "李怀西"
-        },
-        {
-          value: "选项4",
-          label: "李怀西"
-        },
-        {
-          value: "选项5",
-          label: "李怀西"
-        }
-      ],
-      salesmanColumns: [
-        "李怀西",
-        "王怀东",
-        "李怀西",
-        "李怀西",
-        "李怀西",
-        "李怀西"
-      ],
-      channelOptions: [
-        {
-          value: "选项1",
-          label: "渠道1"
-        },
-        {
-          value: "选项2",
-          label: "渠道2"
-        },
-        {
-          value: "选项3",
-          label: "渠道3"
-        },
-        {
-          value: "选项4",
-          label: "渠道4"
-        },
-        {
-          value: "选项5",
-          label: "渠道5"
-        }
-      ],
-      channelColumns: ["渠道1", "渠道2", "渠道3", "渠道4", "渠道5", "渠道6"],
-      productOptions: [
-        {
-          value: "选项1",
-          label: "产品1"
-        },
-        {
-          value: "选项2",
-          label: "产品2"
-        },
-        {
-          value: "选项3",
-          label: "产品3"
-        },
-        {
-          value: "选项4",
-          label: "产品4"
-        },
-        {
-          value: "选项5",
-          label: "产品5"
-        }
-      ],
-      productColumns: [
-        "产品1",
-        "产品2",
-        "产品3",
-        "产品4",
-        "产品5",
-        "产品6",
-        "产品7",
-        "产品8"
-      ],
+      salemanOptions: [],
+      salesmanColumns: [],
+      channelOptions: [],
+      channelColumns: [],
+      productOptions: [],
+      productColumns: [],
+      colorOptions: [],
+      colorColumns: [],
       usefulOptions: [
         {
-          value: "选项1",
+          value: "是",
           label: "是"
         },
         {
-          value: "选项2",
+          value: "否",
           label: "否"
         }
       ],
       usefulColumns: ["有效单", "无效单"],
       repeatOrderOptions: [
         {
-          value: "选项1",
+          value: "是",
           label: "是"
         },
         {
-          value: "选项2",
+          value: "否",
           label: "否"
         }
       ],
@@ -765,25 +694,6 @@ export default {
         }
       ],
       exportJDColumns: ["已导入", "未导入"],
-      colorOptions: [
-        {
-          value: "选项1",
-          label: "颜色1"
-        },
-        {
-          value: "选项2",
-          label: "颜色2"
-        },
-        {
-          value: "选项3",
-          label: "颜色3"
-        },
-        {
-          value: "选项4",
-          label: "颜色4"
-        }
-      ],
-      colorColumns: ["颜色1", "颜色2", "颜色3", "颜色4", "颜色5", "颜色6"],
       timeSelectValue: "",
       salemanValue: "",
       channelValue: "",
@@ -867,6 +777,10 @@ export default {
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
+    this.getSalesman();
+    this.getChannel();
+    this.getProduct();
+    this.getColor();
   },
   destroyed() {
     window.removeEventListener("resize", this.getHeight);
@@ -882,6 +796,65 @@ export default {
     }
   },
   methods: {
+    // 获取业务员列表
+    getSalesman() {
+      getSalesmanList().then(res => {
+        const salesmanList = res.data;
+        salesmanList.forEach(salesmanItem => {
+          const salesmanObject = {
+            value: salesmanItem.name,
+            label: salesmanItem.name
+          };
+          this.salemanOptions.push(salesmanObject);
+          this.salesmanColumns.push(salesmanItem.name);
+        });
+      });
+    },
+    // 获取渠道列表
+    getChannel() {
+      getChannelList().then(res => {
+        const channelList = res.data;
+        channelList.forEach(channelItem => {
+          const channelObject = {
+            value: channelItem.id,
+            label: channelItem.name
+          };
+          this.channelOptions.push(channelObject);
+          this.channelColumns.push(channelItem.name);
+        });
+      });
+    },
+    // 获取产品列表
+    getProduct() {
+      getProductList().then(res => {
+        const productList = res.data;
+
+        productList.forEach(productItem => {
+          const productObject = {
+            value: productItem.id,
+            label: productItem.name
+          };
+          this.productOptions.push(productObject);
+          this.productColumns.push(productItem.name);
+        });
+      });
+    },
+    // 获取颜色列表
+    getColor() {
+      getColorList().then(res => {
+        const colorList = res.data;
+        colorList.forEach(colorItem => {
+          if (colorItem.name) {
+            const colorProject = {
+              value: colorItem.id,
+              label: colorItem.name
+            };
+            this.colorOptions.push(colorProject);
+            this.colorColumns.push(colorItem.name);
+          }
+        });
+      });
+    },
     //表格高度自适应
     getHeight() {
       let otherHeight = this.device == "desktop" ? 250 : 200;
@@ -946,15 +919,39 @@ export default {
     //确认编辑
     handleEditConfirm(row, column, event) {
       let count = 0;
+      let productId;
+      let colorLabel;
       this.list.forEach(item => {
         if (item.id == this.currentEditID) {
-          this.list[count].productName = this.form.productType;
+          this.productOptions.forEach(productItem => {
+            if(productItem.value === this.form.productType){
+              productId = productItem.value;
+              this.list[count].productName = productItem.label;
+            }
+          })
+          
+          this.colorOptions.forEach(colorItem => {
+            if(colorItem.value === this.form.color){
+              colorLabel = colorItem.label;
+              this.list[count].color = colorItem.label;
+            }
+          })
+
           this.list[count].name = this.form.name;
-          this.list[count].color = this.form.color;
           this.list[count].count = this.form.count;
           this.list[count].price = this.form.price;
           this.list[count].remarks = this.form.remarks;
           this.list[count].address = this.form.address;
+          this.$emit("listenToChildEvent", {
+            id: this.list[count].id,
+            productId: productId,
+            name: this.list[count].name,
+            color: colorLabel,
+            count: this.list[count].count,
+            price: this.list[count].price,
+            remarks: this.list[count].remarks,
+            address: this.list[count].address
+          });
         } else {
           count++;
         }
@@ -1097,13 +1094,13 @@ export default {
           data.forEach(index => {
             count = count + parseInt(index.count);
           });
-          sums[index] = count;
+          sums[index] = count || "";
         }
         if (column.label == "总价") {
           data.forEach(index => {
             price = price + parseInt(index.price);
           });
-          sums[index] = price;
+          sums[index] = price || "";
         }
       });
       return sums;

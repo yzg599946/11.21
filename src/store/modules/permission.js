@@ -581,21 +581,7 @@ export function filterAsyncRoutes(asyncRouter) {
         accessedRoutes.push(componetRouter)
       }
     })
-  // if (router.component) {
-  //   if (router.component === 'Layout') {
-  //     // Layout组件特殊处理
-  //     router.component = Layout
-  //   } else {
-  //     const component = router.component
-  //     router.component = () => import(`@/views${component}`)
-  //   }
-  // }
-  // if (router.children && router.children.length) {
-  //   router.children = filterAsyncRoutes(router.children)
-  // }
-  // accessedRoutes.push(router)
   })
-  // const accessedRoutes = componentList
   return accessedRoutes
 }
 

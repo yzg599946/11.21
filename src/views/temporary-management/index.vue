@@ -554,7 +554,7 @@
 <script>
 import Vue from "vue";
 import { parseTime } from "@/utils";
-import { getOrderList } from "@/api/orderList";
+import {  } from "@/api/orderList";
 import { setTimeout, clearTimeout } from "timers";
 import {
   Pagination,
@@ -861,7 +861,7 @@ export default {
     //获取数据列表
     getDataList() {
       this.listLoading = true;
-      this.list = getOrderList();
+
       this.listLoading = false;
     },
     //单击复制

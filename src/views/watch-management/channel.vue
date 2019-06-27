@@ -3,6 +3,7 @@
 </template>
 <script>
 import channelTable from "@/components/channelTable";
+import { getChannelStatisticsWatch } from "@/api/orderList";
 
 export default {
   components: {
@@ -10,21 +11,30 @@ export default {
   },
   data() {
     return {
-      list: [
-        {
-          channel: "微信小程序",
-          orderCount: "4"
-        },
-        {
-          channel: "快手",
-          orderCount: "231"
-        },
-        {
-          channel: "百度",
-          orderCount: "14"
-        }
-      ]
+      list: []
     };
+  },
+  created() {
+    this.getChannelStatistics();
+  },
+  methods: {
+    getChannelStatistics() {
+      const contains = false;
+      const rows = 1000;
+      const page = 1;
+      getChannelStatisticsWatch({
+        contains: contains,
+        rows: rows,
+        page: page
+      }).then(res => {
+        const dataList = res.data.rows;
+        dataList.forEach(dataItem => {
+          const { cpName, pNum } = dataItem;
+          const listItem = { channel: cpName, orderCount: pNum };
+          this.list.push(listItem);
+        });
+      });
+    }
   }
 };
 </script>
