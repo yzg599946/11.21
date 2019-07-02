@@ -1,10 +1,9 @@
 <template>
-  <timeslotTable :tableList="list"/>
+  <timeslotTable :category="category" />
 </template>
 
 <script>
 import timeslotTable from "@/components/timeslotTable";
-import { getTimeslotStatisticsWatch } from "@/api/orderList";
 
 export default {
   components: {
@@ -12,30 +11,8 @@ export default {
   },
   data() {
     return {
-      list: []
+      category: "watch"
     };
-  },
-  created() {
-    this.getTimeslotStatistics();
-  },
-  methods: {
-    getTimeslotStatistics() {
-      const contains = false;
-      const rows = 1000;
-      const page = 1;
-      getTimeslotStatisticsWatch({
-        contains: contains,
-        rows: rows,
-        page: page
-      }).then(res => {
-        const dataList = res.data.rows;
-        dataList.forEach(dataItem => {
-          const { timeCount, tNum } = dataItem;
-          const listItem = { timeslot: timeCount, orderCount: tNum };
-          this.list.push(listItem);
-        });
-      });
-    }
   }
 };
 </script>

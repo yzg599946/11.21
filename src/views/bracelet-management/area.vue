@@ -1,5 +1,5 @@
 <template>
-  <areaTable :tableList="list"/>
+  <areaTable :category="category" />
 </template>
 
 <script>
@@ -11,20 +11,7 @@ export default {
   },
   data() {
     return {
-      list: [
-        {
-          province: "湖北",
-          orderCount: "4"
-        },
-        {
-          province: "湖南",
-          orderCount: "231"
-        },
-        {
-          province: "广东",
-          orderCount: "14"
-        }
-      ]
+      category: "igbracelet"
     };
   }
 };

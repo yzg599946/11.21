@@ -36,8 +36,8 @@
       </div>
     </div>
     <div v-else style="width:100%;">
-      <div style="text-align:center;padding:10px;">
-        <span>深圳市隆辉腾科技有限公司</span>
+      <div style="display:flex;justify-content:center;margin-top:10px;">
+        <img :src="mobileUrl" style="height:100%;width:100%;">
       </div>
       <div style="width:100%;display:flex;">
         <div style="width:48%;">
@@ -88,6 +88,7 @@ export default {
   data() {
     return {
       url: "http://i2.tiimg.com/689844/30dbd702eea630e1.jpg",
+      mobileUrl:"http://i2.tiimg.com/689844/42d4066671c03058.png",
       overtimeTableData: [],
       orderTableData: [],
       headerShow: true,

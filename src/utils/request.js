@@ -49,6 +49,9 @@ service.interceptors.response.use(
    * You can also judge the status by HTTP Status Code
    */
   response => {
+    if (response.data.type === 'application/vnd.mx-excel') {
+      return response.data
+    }
     const res = response.data
     // if the custom code is not 20000, it is judged as an error.
     if (res.status !== 200) {
@@ -59,7 +62,7 @@ service.interceptors.response.use(
       })
 
       // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
-      if (res.status === 508 || res.code === 512 || res.status === 514) {
+      if (res.status === 508 || res.status === 512 || res.status === 514) {
         // to re-login
         MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
           confirmButtonText: 'Re-Login',

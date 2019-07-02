@@ -5,6 +5,7 @@
       <el-date-picker
         v-model="timeSelectValue"
         type="datetimerange"
+        value-format="yyyy-MM-dd"
         :picker-options="pickerOptions"
         range-separator="至"
         start-placeholder="开始日期"
@@ -29,7 +30,14 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select size="mini" v-model="channelValue" clearable filterable placeholder="渠道项目">
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="channelValue"
+        clearable
+        filterable
+        placeholder="渠道项目"
+      >
         <el-option
           v-for="item in channelOptions"
           :key="item.value"
@@ -54,7 +62,14 @@
         v-model="phoneNumberInput"
         clearable
       ></el-input>
-      <el-select size="mini" v-model="usefulValue" clearable filterable placeholder="是否有效单">
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="usefulValue"
+        clearable
+        filterable
+        placeholder="是否有效单"
+      >
         <el-option
           v-for="item in usefulOptions"
           :key="item.value"
@@ -62,7 +77,14 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select size="mini" v-model="repeatOrderValue" clearable filterable placeholder="是否重单">
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="repeatOrderValue"
+        clearable
+        filterable
+        placeholder="是否重单"
+      >
         <el-option
           v-for="item in repeatOrderOptions"
           :key="item.value"
@@ -72,6 +94,7 @@
       </el-select>
       <el-select
         size="mini"
+        class="table-input"
         v-model="repeatNamePhoneValue"
         clearable
         filterable
@@ -84,7 +107,14 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select size="mini" v-model="exportjdValue" clearable filterable placeholder="是否已导入京东">
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="exportjdValue"
+        clearable
+        filterable
+        placeholder="是否已导入京东"
+      >
         <el-option
           v-for="item in exportjdOptions"
           :key="item.value"
@@ -116,8 +146,17 @@
         class="filter-item"
         type="primary"
         icon="el-icon-search"
+        :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-close"
+        :loading="clearSearchButtonLoading"
+        @click="handleClearSearch"
+      >清空</el-button>
       <el-button
         size="mini"
         class="filter-item"
@@ -158,93 +197,116 @@
       show-summary
       :max-height="tableMaxHeight"
       :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
-      style="width: 100%;user-select:none;"
+      style="width: 100%;"
     >
-      <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
-      <el-table-column label="ID" prop="id" align="center" width="80">
+      <el-table-column
+        :show-overflow-tooltip="true"
+        v-if="device=='desktop'"
+        fixed
+        type="selection"
+        align="center"
+        width="50"
+      ></el-table-column>
+      <el-table-column :show-overflow-tooltip="true" label="ID" prop="id" align="center" width="80">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="渠道项目" width="120px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="渠道项目" width="120px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.channel }}</span>
+          <span>{{ scope.row.channel.substring(0,scope.row.channel.indexOf('-')) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="产品名称" width="130px" sortable="custom" align="center">
+      <el-table-column
+        :show-overflow-tooltip="true"
+        prop="productName"
+        label="产品名称"
+        width="130px"
+        sortable
+        align="center"
+      >
         <template slot-scope="scope">
           <span>{{ scope.row.productName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="颜色名称" width="130px" sortable="custom" align="center">
+      <el-table-column
+        :show-overflow-tooltip="true"
+        prop="color"
+        label="颜色名称"
+        width="130px"
+        sortable
+        align="center"
+      >
         <template slot-scope="scope">
           <span>{{ scope.row.color }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="名字" width="100px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="名字" width="100px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="手机" width="130px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="手机" width="130px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.phoneNumber }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="数量" width="80px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="数量" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.count }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="总价" width="80px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="总价" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.price }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="重单" width="80px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="重单" width="80px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.repeatOrder }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="详细地址" width="400px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="详细地址" width="400px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.address }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="200px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="创建时间" width="200px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" width="140px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="备注" width="140px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.remarks }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否可用" width="100px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="是否可用" width="100px" align="center">
         <template slot-scope="scope">
           <span
             style="cursor:pointer"
-            :class="scope.row.isUseful?'black':'red'"
-          >{{ scope.row.isUseful?'有效单':'无效单' }}</span>
+            :class="scope.row.isUseful==1?'blue':'red'"
+          >{{ scope.row.isUseful==1?'有效单':'无效单' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="导入物流状态" width="120px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="导入物流状态" width="120px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.logisticsState }}</span>
+          <span
+            :class="scope.row.logisticsState==1?'blue':'red'"
+          >{{ scope.row.logisticsState==1?'导入':'未导入' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="业务员" width="90px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="业务员" width="90px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.salesman }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作员" width="90px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="操作员" width="90px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.operator }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="核单间隔" width="120px" align="center">
+      <el-table-column :show-overflow-tooltip="true" label="核单间隔" width="120px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.nuclearOrderInterval }}</span>
         </template>
@@ -258,6 +320,7 @@
       :current-page="currentPage"
       :page-sizes="pagesizes"
       :page-size="pagesize"
+      hide-on-single-page
       layout="total, sizes, prev, pager, next, jumper"
       :total="list.length"
       class="pagination"
@@ -272,6 +335,8 @@
           center
           label="跳转至"
           @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
         >
           <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
         </van-field>
@@ -334,7 +399,7 @@
       type="text"
       value
       style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
-    >
+    />
     <!--导入京东窗口 -->
     <el-dialog
       class="import-jd"
@@ -386,7 +451,7 @@
               is-link
               :value="channelMobileValue"
             />
-            <van-cell @click="handleChooseProduct" title="产品" is-link :value="productMobileValue"/>
+            <van-cell @click="handleChooseProduct" title="产品" is-link :value="productMobileValue" />
             <van-cell
               @click="handleChooseIsUseful"
               title="是否有效单"
@@ -435,6 +500,38 @@
               input-align="right"
               is-link
             />
+            <van-field
+              clearable
+              label="起始ID"
+              v-model="minIdMobileValue"
+              placeholder="请输入起始ID"
+              input-align="right"
+              is-link
+            />
+            <van-field
+              clearable
+              label="结束ID"
+              v-model="maxIdMobileValue"
+              placeholder="请输入结束ID"
+              input-align="right"
+              is-link
+            />
+            <van-field
+              clearable
+              label="起始价格"
+              v-model="minPriceMobileValue"
+              placeholder="请输入起始价格"
+              input-align="right"
+              is-link
+            />
+            <van-field
+              clearable
+              label="结束价格"
+              v-model="maxPriceMobileValue"
+              placeholder="请输入结束价格"
+              input-align="right"
+              is-link
+            />
           </van-cell-group>
           <div class="mobile-search">
             <van-button
@@ -471,7 +568,7 @@
           <div slot="action" @click="handleSearchSalesmanItem">搜索</div>
         </van-search>
         <datalist id="salesmanIde">
-          <option v-for="item in salemanOptions" :key="item.value" :value="item.label"/>
+          <option v-for="item in salemanOptions" :key="item.value" :value="item.label" />
         </datalist>
         <van-picker
           show-toolbar
@@ -493,7 +590,7 @@
           <div slot="action" @click="handleSearchChannelItem">搜索</div>
         </van-search>
         <datalist id="channelIde">
-          <option v-for="item in channelOptions" :key="item.value" :value="item.label"/>
+          <option v-for="item in channelOptions" :key="item.value" :value="item.label" />
         </datalist>
         <van-picker
           show-toolbar
@@ -515,7 +612,7 @@
           <div slot="action" @click="handleSearchProductItem">搜索</div>
         </van-search>
         <datalist id="productIde">
-          <option v-for="item in productOptions" :key="item.value" :value="item.label"/>
+          <option v-for="item in productOptions" :key="item.value" :value="item.label" />
         </datalist>
         <van-picker
           show-toolbar
@@ -569,6 +666,10 @@
 import Vue from "vue";
 import { parseTime } from "@/utils";
 import {
+  getOuterChainOrder,
+  editOuterChainUsefulStatus,
+  editOuterChainOrder,
+  exportOuterChainExcel,
   getSalesmanList,
   getChannelList,
   getProductList,
@@ -590,6 +691,7 @@ import {
   ActionSheet,
   Search
 } from "vant";
+import channelVue from "../../views/heater-management/channel.vue";
 
 Vue.use(Pagination);
 Vue.use(Button);
@@ -607,7 +709,7 @@ Vue.use(Search);
 
 export default {
   name: "orderTable",
-  props: ["tableList"],
+  props: ["category"],
   data() {
     return {
       list: [],
@@ -652,44 +754,44 @@ export default {
       colorColumns: [],
       usefulOptions: [
         {
-          value: "是",
+          value: "0",
           label: "是"
         },
         {
-          value: "否",
+          value: "1",
           label: "否"
         }
       ],
       usefulColumns: ["有效单", "无效单"],
       repeatOrderOptions: [
         {
-          value: "是",
+          value: "0",
           label: "是"
         },
         {
-          value: "否",
+          value: "1",
           label: "否"
         }
       ],
       repeatOrderColumns: ["重单", "不重单"],
       repeatNamePhoneOptions: [
         {
-          value: "选项1",
+          value: "0",
           label: "是"
         },
         {
-          value: "选项2",
+          value: "1",
           label: "否"
         }
       ],
       repeatNamePhoneColumns: ["重复", "不重复"],
       exportjdOptions: [
         {
-          value: "选项1",
+          value: "0",
           label: "是"
         },
         {
-          value: "选项2",
+          value: "1",
           label: "否"
         }
       ],
@@ -722,7 +824,7 @@ export default {
       },
       currentEditID: 0,
       downloadLoading: false,
-      listLoading: true,
+      listLoading: false,
       currentPage: 1, //当前页
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
       pagesize: 20, //单页内条数
@@ -756,6 +858,10 @@ export default {
       nameMobileValue: "",
       colorMobileValue: "",
       phoneMobileValue: "",
+      minIdMobileValue: "",
+      maxIdMobileValue: "",
+      minPriceMobileValue: "",
+      maxPriceMobileValue: "",
       device: "",
       salesmanSearchValue: "",
       channelSearchValue: "",
@@ -766,14 +872,17 @@ export default {
       datetimePickerType: "",
       mobileSearchButtonLoading: false,
       tableMaxHeight: 0,
-      pageJumpIndex: 1
+      pageJumpIndex: 1,
+      searchButtonLoading: false,
+      clearSearchButtonLoading: false,
+      paramsStorage: {},
+      contains: false,
+      rows: 1000,
+      page: 1
     };
   },
   created() {
-    setTimeout(() => {
-      this.list = this.tableList;
-      this.listLoading = false;
-    }, 1000);
+    this.list = this.getOrderList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -796,13 +905,73 @@ export default {
     }
   },
   methods: {
+    // 获取表格列表
+    getOrderList() {
+      let orderList = [];
+      this.listLoading = true;
+      getOuterChainOrder(this.category, {
+        contains: this.contains,
+        rows: this.rows,
+        page: this.page
+      }).then(res => {
+        const tableData = res.data.rows;
+        if (tableData.length === 0) {
+          this.listLoading = false;
+          return;
+        }
+        tableData.forEach(tableItem => {
+          const {
+            id,
+            cpName,
+            productName,
+            colorName,
+            username,
+            telephone,
+            totalCost,
+            pNum,
+            num,
+            price,
+            isRepeat,
+            address,
+            createTime,
+            remark,
+            mode,
+            name,
+            operator,
+            operatingTime
+          } = tableItem;
+          const orderItem = {
+            id: id,
+            channel: cpName,
+            productName: productName,
+            color: colorName,
+            name: name,
+            phoneNumber: telephone,
+            count: num,
+            price: totalCost,
+            repeatOrder: isRepeat,
+            address: address,
+            createTime: createTime,
+            remarks: remark,
+            isUseful: mode,
+            logisticsState: mode,
+            salesman: username,
+            operator: operator,
+            nuclearOrderInterval: operatingTime
+          };
+          orderList.push(orderItem);
+        });
+      });
+      this.listLoading = false;
+      return orderList;
+    },
     // 获取业务员列表
     getSalesman() {
       getSalesmanList().then(res => {
         const salesmanList = res.data;
         salesmanList.forEach(salesmanItem => {
           const salesmanObject = {
-            value: salesmanItem.name,
+            value: salesmanItem.id,
             label: salesmanItem.name
           };
           this.salemanOptions.push(salesmanObject);
@@ -855,12 +1024,12 @@ export default {
         });
       });
     },
-    //表格高度自适应
+    // 表格高度自适应
     getHeight() {
       let otherHeight = this.device == "desktop" ? 250 : 200;
       this.tableMaxHeight = window.innerHeight - otherHeight;
     },
-    //单击复制
+    // 单击复制
     handleUseful(row, column, cell, event) {
       if (this.device == "mobile") return;
       if (this.clickFlag) {
@@ -873,7 +1042,10 @@ export default {
         if (column.label == "是否可用") {
           this.list.forEach(item => {
             if (item.id == row.id) {
-              this.list[count].isUseful = !this.list[count].isUseful;
+              this.handleChangeUseful({
+                id: row.id,
+                mode: this.list[count].isUseful
+              });
             } else {
               count++;
             }
@@ -895,6 +1067,29 @@ export default {
         }
       }, 300);
     },
+    // 修改可用状态
+    handleChangeUseful(data) {
+      const { id, mode } = data;
+      let modeInt;
+      mode == 1 ? (modeInt = 0) : (modeInt = 1);
+      editOuterChainUsefulStatus(this.category, {
+        id: id,
+        mode: modeInt
+      })
+        .then(res => {
+          this.reloadPage();
+          setTimeout(() => {
+            this.$message({
+              message: "修改成功",
+              type: "success"
+            });
+          }, 1000);
+        })
+        .catch(error => {
+          this.$message.error("修改失败");
+          console.log(error);
+        });
+    },
     // 双击编辑
     handleEdit(e) {
       if (this.device == "mobile") return;
@@ -912,58 +1107,202 @@ export default {
       this.currentEditID = e.id;
       this.editDialogVisible = true;
     },
-    //取消编辑
+    // 取消编辑
     handleEditCancel() {
       this.editDialogVisible = false;
     },
-    //确认编辑
+    // 确认编辑
     handleEditConfirm(row, column, event) {
       let count = 0;
       let productId;
-      let colorLabel;
+      let colorId;
       this.list.forEach(item => {
         if (item.id == this.currentEditID) {
           this.productOptions.forEach(productItem => {
-            if(productItem.value === this.form.productType){
+            if (productItem.label === this.form.productType) {
               productId = productItem.value;
-              this.list[count].productName = productItem.label;
             }
-          })
-          
-          this.colorOptions.forEach(colorItem => {
-            if(colorItem.value === this.form.color){
-              colorLabel = colorItem.label;
-              this.list[count].color = colorItem.label;
-            }
-          })
+          });
 
-          this.list[count].name = this.form.name;
-          this.list[count].count = this.form.count;
-          this.list[count].price = this.form.price;
-          this.list[count].remarks = this.form.remarks;
-          this.list[count].address = this.form.address;
-          this.$emit("listenToChildEvent", {
+          if (this.form.color == null) {
+            this.form.color = undefined;
+          }
+
+          const params = {
             id: this.list[count].id,
             productId: productId,
-            name: this.list[count].name,
-            color: colorLabel,
-            count: this.list[count].count,
-            price: this.list[count].price,
-            remarks: this.list[count].remarks,
-            address: this.list[count].address
-          });
+            name: this.form.name,
+            colorName: this.form.color,
+            num: this.form.count,
+            totalCost: this.form.price,
+            remark: this.form.remarks,
+            address: this.form.address
+          };
+          editOuterChainOrder(this.category, params)
+            .then(res => {
+              this.reloadPage();
+              setTimeout(() => {
+                this.$message({
+                  message: "修改成功",
+                  type: "success"
+                });
+              }, 1000);
+            })
+            .catch(error => {
+              this.$message.error("修改失败");
+              console.log(error);
+            });
         } else {
           count++;
         }
       });
       this.editDialogVisible = false;
-      this.$message({
-        message: "修改成功",
-        type: "success"
-      });
     },
-    handleSearch() {},
-    //选择表格尺寸
+    // 搜索验证
+    searchVerify() {
+      if (
+        (this.minIdInput && !this.maxIdInput) ||
+        (!this.minIdInput && this.maxIdInput)
+      ) {
+        this.$message({
+          message: "未填写完整的ID范围",
+          type: "warning"
+        });
+        return false;
+      }
+      if (
+        (this.minPriceInput && !this.maxPriceInput) ||
+        (!this.minPriceInput && this.maxPriceInput)
+      ) {
+        this.$message({
+          message: "未填写完整的价格范围",
+          type: "warning"
+        });
+        return false;
+      }
+    },
+    // 搜索
+    handleSearch() {
+      if (this.searchVerify()) return;
+      this.listLoading = true;
+      this.searchButtonLoading = true;
+      let searchList = [];
+
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.rows,
+        page: this.page
+      };
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.minIdInput ? (paramsObj.id = this.minIdInput) : "";
+      this.maxIdInput ? (paramsObj.idEnd = this.maxIdInput) : "";
+      this.repeatOrderValue ? (paramsObj.isRepeat = this.repeatOrderValue) : "";
+      this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
+      this.nameInput ? (paramsObj.name = this.nameInput) : "";
+      this.productValue ? (paramsObj.productId = this.productValue) : "";
+      this.phoneNumberInput
+        ? (paramsObj.telephone = this.phoneNumberInput)
+        : "";
+      this.minPriceInput ? (paramsObj.totalCost = this.minPriceInput) : "";
+      this.maxPriceInput ? (paramsObj.totalCostEnd = this.maxPriceInput) : "";
+      if (this.salemanValue.length > 0) {
+        paramsObj.uids = this.salemanValue.join(",");
+      }
+      this.paramsStorage = paramsObj;
+      getOuterChainOrder(this.category, paramsObj)
+        .then(res => {
+          const tableData = res.data.rows;
+          if (tableData.length === 0) {
+            this.searchButtonLoading = false;
+            this.listLoading = false;
+            return;
+          }
+          tableData.forEach(tableItem => {
+            const {
+              id,
+              cpName,
+              pid,
+              productName,
+              colorName,
+              username,
+              telephone,
+              totalCost,
+              pNum,
+              num,
+              price,
+              size,
+              isRepeat,
+              address,
+              createTime,
+              remark,
+              mode,
+              isImport,
+              name,
+              uid,
+              operator,
+              operatingTime
+            } = tableItem;
+            const orderItem = {
+              id: id,
+              channel: cpName,
+              pid: pid,
+              productName: productName,
+              color: colorName,
+              name: name,
+              phoneNumber: telephone,
+              count: num,
+              price: totalCost,
+              size: size,
+              repeatOrder: isRepeat,
+              address: address,
+              createTime: createTime,
+              remarks: remark,
+              isUseful: mode,
+              logisticsState: isImport,
+              salesman: username,
+              uid: uid,
+              operator: operator,
+              nuclearOrderInterval: operatingTime
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+          this.searchButtonLoading = false;
+          this.listLoading = false;
+        })
+        .catch(error => {
+          this.searchButtonLoading = false;
+          this.listLoading = false;
+          console.log(error);
+        });
+    },
+    // 清空搜索项
+    handleClearSearch() {
+      this.timeSelectValue = ["", ""];
+      this.salemanValue = [];
+      this.channelValue = "";
+      this.productValue = "";
+      this.colorInput = "";
+      this.nameInput = "";
+      this.phoneNumberInput = "";
+      this.usefulValue = "";
+      this.repeatOrderValue = "";
+      this.repeatNamePhoneValue = "";
+      this.exportjdValue = "";
+      this.minIdInput = "";
+      this.maxIdInput = "";
+      this.minPriceInput = "";
+      this.maxPriceInput = "";
+      this.salemanChange();
+    },
+    // 选择表格尺寸
     handleSizeChange(val) {
       this.listLoading = true;
       setTimeout(() => {
@@ -971,7 +1310,7 @@ export default {
         this.listLoading = false;
       }, 500);
     },
-    //选择表格当前页数
+    // 选择表格当前页数
     handleCurrentChange(val) {
       this.listLoading = true;
       setTimeout(() => {
@@ -979,62 +1318,38 @@ export default {
         this.listLoading = false;
       }, 500);
     },
-    //导出excel
+    // 导出excel
     handleDownload() {
       this.downloadLoading = true;
-      import("@/vendor/Export2Excel").then(excel => {
-        const tHeader = [
-          "id",
-          "渠道项目",
-          "产品名称",
-          "颜色名称",
-          "名字",
-          "手机",
-          "数量",
-          "总价",
-          "重单",
-          "详细地址",
-          "创建时间",
-          "备注",
-          "是否可用",
-          "导入物流状态",
-          "业务员",
-          "操作员",
-          "核单间隔"
-        ];
-        const filterVal = [
-          "id",
-          "channel",
-          "productName",
-          "color",
-          "name",
-          "phoneNumber",
-          "count",
-          "price",
-          "repeatOrder",
-          "address",
-          "createTime",
-          "remarks",
-          "isUseful",
-          "logisticsState",
-          "salesman",
-          "operator",
-          "nuclearOrderInterval"
-        ];
-        const list = this.list;
-        const data = this.formatJson(filterVal, list);
-        excel.export_json_to_excel({
-          header: tHeader,
-          data,
-          filename:
-            new Date().toLocaleDateString() + new Date().toLocaleTimeString(),
-          autoWidth: true,
-          bookType: "xlsx"
-        });
+      if (this.multipleSelection.length === 0) {
+        this.$message.error("未选择任何数据");
         this.downloadLoading = false;
+        return;
+      }
+
+      let ids = [];
+      this.multipleSelection.forEach(selectItem => {
+        ids.push(selectItem.id);
       });
+      let idsStr = ids.join(",");
+      exportOuterChainExcel(this.category, {
+        ids: idsStr,
+        logistics: "yd"
+      }).then(res => {
+        console.log(res.data)
+        const blob = new Blob([res], { type: "application/vnd.mx-excel;charset=utf-8" });
+        var downloadElement = document.createElement("a");
+        var href = window.URL.createObjectURL(blob); //创建下载的链接
+        downloadElement.href = href;
+        downloadElement.download = "统计.xlsx"; //下载后文件名
+        document.body.appendChild(downloadElement);
+        downloadElement.click(); //点击下载
+        document.body.removeChild(downloadElement); //下载完成移除元素
+        window.URL.revokeObjectURL(href); //释放掉blob对象
+      });
+      this.downloadLoading = false;
     },
-    //格式化数据
+    // 格式化数据
     formatJson(filterVal, jsonData) {
       return jsonData.map(v =>
         filterVal.map(j => {
@@ -1046,7 +1361,7 @@ export default {
         })
       );
     },
-    //业务员选择器宽度自适应
+    // 业务员选择器宽度自适应
     salemanChange() {
       const inputWidth = 178; //选择器原始宽度 178px
       let optionWidth = this.salemanValue.length * 65 + 97; //一个标签宽度65px 右边预留97px
@@ -1055,13 +1370,13 @@ export default {
           ? "width:" + optionWidth + "px"
           : "width:" + inputWidth + "px";
     },
-    //选择发生改变
+    // 选择发生改变
     handleSelectChange(selection) {
       this.multipleSelection = selection;
     },
-    //导入德邦
+    // 导入德邦
     handleExportDB() {},
-    //批量导入京东
+    // 批量导入京东
     handleBatchImportIntoJD() {
       if (!this.multipleSelection.length) {
         this.$message.error("未选择任何数据");
@@ -1069,17 +1384,17 @@ export default {
         this.importTypeDialogVisible = true;
       }
     },
-    //空运
+    // 空运
     handleImportSky() {
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
-    //陆运
+    // 陆运
     handleImportLand() {
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
-    //合计
+    // 合计
     getSummaries(param) {
       const { columns, data } = param;
       const sums = [];
@@ -1105,29 +1420,92 @@ export default {
       });
       return sums;
     },
+    // 重载页面
+    reloadPage() {
+      if (this.paramsStorage === {}) {
+        this.list = this.getOrderList();
+      } else {
+        let searchList = [];
+        getOuterChainOrderClothes(this.category, this.paramsStorage).then(
+          res => {
+            const tableData = res.data.rows;
+            tableData.forEach(tableItem => {
+              const {
+                id,
+                cpName,
+                pid,
+                productName,
+                colorName,
+                username,
+                telephone,
+                totalCost,
+                pNum,
+                num,
+                price,
+                size,
+                isRepeat,
+                address,
+                createTime,
+                remark,
+                mode,
+                isImport,
+                name,
+                uid,
+                operator,
+                operatingTime
+              } = tableItem;
+              const orderItem = {
+                id: id,
+                channel: cpName,
+                pid: pid,
+                productName: productName,
+                color: colorName,
+                name: name,
+                phoneNumber: telephone,
+                count: num,
+                price: totalCost,
+                size: size,
+                repeatOrder: isRepeat,
+                address: address,
+                createTime: createTime,
+                remarks: remark,
+                isUseful: mode,
+                logisticsState: isImport,
+                salesman: username,
+                uid: uid,
+                operator: operator,
+                nuclearOrderInterval: operatingTime
+              };
+              searchList.push(orderItem);
+            });
+            this.list = searchList;
+          }
+        );
+      }
+    },
 
     /* 移动端事件 */
 
-    //分页器
+    // 分页器
     handlePageChange() {
       this.listLoading = true;
       setTimeout(() => {
         this.listLoading = false;
       }, 600);
     },
-    //点击搜索
+    // 点击搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {
-        this.mobileSearchShow = !this.mobileSearchShow;
+        this.mobileSearchShow = true;
       }
     },
-    //取消搜索
+    // 取消搜索
     handleSearchMobileCancel() {
       if (this.mobileSearchShow) {
-        this.mobileSearchShow = !this.mobileSearchShow;
+        this.mobileSearchShow = false;
       }
     },
-    //清空所选
+    // 清空所选
     handleSearchMobileClearAll() {
       this.timePickerStartValue == "请选择"
         ? ""
@@ -1158,9 +1536,13 @@ export default {
           : (this.exportJDMobileValue = "请选择"),
         this.nameMobileValue == "" ? "" : (this.nameMobileValue = ""),
         this.colorMobileValue == "" ? "" : (this.colorMobileValue = ""),
-        this.phoneMobileValue == "" ? "" : (this.phoneMobileValue = "");
+        this.phoneMobileValue == "" ? "" : (this.phoneMobileValue = ""),
+        this.maxIdMobileValue == "" ? "" : (this.maxIdMobileValue = ""),
+        this.minIdMobileValue == "" ? "" : (this.minIdMobileValue = ""),
+        this.maxPriceMobileValue == "" ? "" : (this.maxPriceMobileValue = ""),
+        this.minPriceMobileValue == "" ? "" : (this.minPriceMobileValue = "");
     },
-    //选择开始日期
+    // 选择开始日期
     handleChooseDateStartMobile() {
       if (!this.mobileDatePickerShow) {
         if (this.timePickerEndValue != "请选择") {
@@ -1173,7 +1555,7 @@ export default {
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
       }
     },
-    //选择结束日期
+    // 选择结束日期
     handleChooseDateEndMobile() {
       if (!this.mobileDatePickerShow) {
         if (this.timePickerStartValue != "请选择") {
@@ -1187,7 +1569,7 @@ export default {
       }
     },
     datetimePickerChange(e) {},
-    //确认选择日期
+    // 确认选择日期
     datetimePickerConfirm(res) {
       if (this.mobileDatePickerShow) {
         if (this.datetimePickerType == "start") {
@@ -1198,54 +1580,54 @@ export default {
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
       }
     },
-    //取消选择日期
+    // 取消选择日期
     datetimePickerCancel() {
       this.mobileDatePickerShow = !this.mobileDatePickerShow;
     },
-    //选择业务员
+    // 选择业务员
     handleChooseSalesman() {
       if (!this.mobileSalesmanPickerShow) {
         this.mobileSalesmanPickerShow = !this.mobileSalesmanPickerShow;
       }
     },
-    //选择渠道
+    // 选择渠道
     handleChooseChannel() {
       if (!this.mobileChannelPickerShow) {
         this.mobileChannelPickerShow = !this.mobileChannelPickerShow;
       }
     },
-    //选择产品
+    // 选择产品
     handleChooseProduct() {
       if (!this.mobileProductPickerShow) {
         this.mobileProductPickerShow = !this.mobileProductPickerShow;
       }
     },
-    //选择是否有效
+    // 选择是否有效
     handleChooseIsUseful() {
       if (!this.mobileUsefulPickerShow) {
         this.mobileUsefulPickerShow = !this.mobileUsefulPickerShow;
       }
     },
-    //选择是否重单
+    // 选择是否重单
     handleChooseIsRepeatOrder() {
       if (!this.mobileRepeatOrderPickerShow) {
         this.mobileRepeatOrderPickerShow = !this.mobileRepeatOrderPickerShow;
       }
     },
-    //选择是否重复电话姓名
+    // 选择是否重复电话姓名
     handleChooseIsRepeatPhoneName() {
       if (!this.mobileRepeatNamePhonePickerShow) {
         this.mobileRepeatNamePhonePickerShow = !this
           .mobileRepeatNamePhonePickerShow;
       }
     },
-    //选择是否导入京东
+    // 选择是否导入京东
     handleChooseExportJD() {
       if (!this.mobileExportJDPickerShow) {
         this.mobileExportJDPickerShow = !this.mobileExportJDPickerShow;
       }
     },
-    //确认选择业务员
+    // 确认选择业务员
     salesmanPickerConfirm(res) {
       if (this.mobileSalesmanPickerShow) {
         if (this.salesmanMobileValue == "请选择") {
@@ -1270,35 +1652,35 @@ export default {
         this.mobileSalesmanPickerShow = !this.mobileSalesmanPickerShow;
       }
     },
-    //确认选择渠道
+    // 确认选择渠道
     channelPickerConfirm(res) {
       if (this.mobileChannelPickerShow) {
         this.channelMobileValue = res;
         this.mobileChannelPickerShow = !this.mobileChannelPickerShow;
       }
     },
-    //确认选择产品
+    // 确认选择产品
     productPickerConfirm(res) {
       if (this.mobileProductPickerShow) {
         this.productMobileValue = res;
         this.mobileProductPickerShow = !this.mobileProductPickerShow;
       }
     },
-    //确认选择是否有效
+    // 确认选择是否有效
     usefulPickerConfirm(res) {
       if (this.mobileUsefulPickerShow) {
         this.usefulMobileValue = res;
         this.mobileUsefulPickerShow = !this.mobileUsefulPickerShow;
       }
     },
-    //确认选择是否重单
+    // 确认选择是否重单
     repeatOrderPickerConfirm(res) {
       if (this.mobileRepeatOrderPickerShow) {
         this.repeatOrderMobileValue = res;
         this.mobileRepeatOrderPickerShow = !this.mobileRepeatOrderPickerShow;
       }
     },
-    //确认选择是否重复电话姓名
+    // 确认选择是否重复电话姓名
     repeatNamePhonePickerConfirm(res) {
       if (this.mobileRepeatNamePhonePickerShow) {
         this.repeatNamePhoneMobileValue = res;
@@ -1306,63 +1688,210 @@ export default {
           .mobileRepeatNamePhonePickerShow;
       }
     },
-    //确认选择是否导入京东
+    // 确认选择是否导入京东
     exportJDPickerConfirm(res) {
       if (this.mobileExportJDPickerShow) {
         this.exportJDMobileValue = res;
         this.mobileExportJDPickerShow = !this.mobileExportJDPickerShow;
       }
     },
-    //导入京东方式
+    // 导入京东方式
     mobileExportJDSelect(item) {
       this.mobileExportJDDialogShow = false;
       Toast.success(item.name + "成功");
     },
-    //取消导入京东
+    // 取消导入京东
     mobileExportJDCancel() {},
-    //业务员快捷搜索
+    // 业务员快捷搜索
     handleSearchSalesmanItem() {
       this.salesPickerCurrentSelect = this.salesmanColumns.indexOf(
         this.salesmanSearchValue
       );
     },
-    //渠道快捷搜索
+    // 渠道快捷搜索
     handleSearchChannelItem() {
       this.channelPickerCurrentSelect = this.channelColumns.indexOf(
         this.channelSearchValue
       );
     },
-    //产品快捷搜索
+    // 产品快捷搜索
     handleSearchProductItem() {
       this.productPickerCurrentSelect = this.productColumns.indexOf(
         this.productSearchValue
       );
     },
-    //开始搜索
+    // 开始搜索
     handleMobileSearch() {
+      let timeStartValue = "";
+      let timeEndValue = "";
+      let productId = "";
+      let channelId = "";
+      let uids = [];
+      let repeatOrder = "";
+      let usefulOrder = "";
+
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      if (this.productMobileValue != "请选择") {
+        this.productOptions.forEach(productItem => {
+          if (productItem.label == this.productMobileValue) {
+            productId = productItem.value;
+          }
+        });
+      } else {
+        productId = "";
+      }
+
+      if (this.channelMobileValue != "请选择") {
+        this.channelOptions.forEach(channelItem => {
+          if (channelItem.label == this.channelMobileValue) {
+            channelId = channelItem.value;
+          }
+        });
+      } else {
+        channelId = "";
+      }
+
+      if (this.salesmanMobileValue != "请选择") {
+        let salesmanArr;
+        if (this.salesmanMobileValue.length > 1) {
+          salesmanArr = this.salesmanMobileValue.split(",");
+          salesmanArr.forEach(salesmanItem => {
+            this.salemanOptions.forEach(optionItem => {
+              if (salesmanItem == optionItem.label) {
+                uids.push(optionItem.value);
+              }
+            });
+          });
+        } else {
+          this.salemanOptions.forEach(optionItem => {
+            if (optionItem.label == this.salesmanMobileValue) {
+              uids.push(optionItem.value);
+            }
+          });
+        }
+      }
+
+      if (this.repeatOrderMobileValue != "请选择") {
+        this.repeatOrderMobileValue == "重单"
+          ? (repeatOrder = 1)
+          : (repeatOrder = 0);
+      } else {
+        repeatOrder = "";
+      }
+
+      if (this.usefulMobileValue != "请选择") {
+        this.usefulMobileValue == "有效单"
+          ? (usefulOrder = 1)
+          : (usefulOrder = 0);
+      } else {
+        usefulOrder = "";
+      }
       this.mobileSearchButtonLoading = true;
-      setTimeout(() => {
-        this.mobileSearchButtonLoading = false;
-        this.mobileSearchShow = false;
-      }, 2000);
-      console.log("开始时间:" + this.timePickerStartValue);
-      console.log("结束时间:" + this.timePickerEndValue);
-      console.log("业务员:" + this.salesmanMobileValue);
-      console.log("渠道项目:" + this.channelMobileValue);
-      console.log("产品:" + this.productMobileValue);
-      console.log("是否有效单:" + this.usefulMobileValue);
-      console.log("是否重单:" + this.repeatOrderMobileValue);
-      console.log("重复手机姓名:" + this.repeatNamePhoneMobileValue);
-      console.log("是否已导入京东:" + this.exportJDMobileValue);
-      console.log("姓名:" + this.nameMobileValue);
-      console.log("颜色:" + this.colorMobileValue);
-      console.log("电话:" + this.phoneMobileValue);
+      let searchList = [];
+      const contains = false;
+      const rows = 1000;
+      const page = 1;
+
+      let paramsObj = { contains: contains, rows: rows, page: page };
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      this.channelVue ? (paramsObj.cid = this.channelVue) : "";
+      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
+      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
+      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
+      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
+      this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
+      productId ? paramsObj.productId : "";
+      this.phoneMobileValue
+        ? (paramsObj.telephone = this.phoneMobileValue)
+        : "";
+      this.minPriceMobileValue
+        ? (paramsObj.totalCost = this.minPriceMobileValue)
+        : "";
+      this.maxPriceMobileValue
+        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
+        : "";
+      if (uids.length > 0) {
+        paramsObj.uids = uids.join(",");
+      }
+      this.paramsStorage = paramsObj;
+      getOuterChainOrder(this.category, paramsObj)
+        .then(res => {
+          const tableData = res.data.rows;
+          if (tableData.length === 0) {
+            this.mobileSearchButtonLoading = false;
+            this.mobileSearchShow = false;
+            return;
+          }
+          tableData.forEach(tableItem => {
+            const {
+              id,
+              cpName,
+              pid,
+              productName,
+              colorName,
+              username,
+              telephone,
+              totalCost,
+              pNum,
+              num,
+              price,
+              size,
+              isRepeat,
+              address,
+              createTime,
+              remark,
+              mode,
+              isImport,
+              name,
+              uid,
+              operator,
+              operatingTime
+            } = tableItem;
+            const orderItem = {
+              id: id,
+              channel: cpName,
+              pid: pid,
+              productName: productName,
+              color: colorName,
+              name: name,
+              phoneNumber: telephone,
+              count: num,
+              price: totalCost,
+              size: size,
+              repeatOrder: isRepeat,
+              address: address,
+              createTime: createTime,
+              remarks: remark,
+              isUseful: mode,
+              logisticsState: isImport,
+              salesman: username,
+              uid: uid,
+              operator: operator,
+              nuclearOrderInterval: operatingTime
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+          this.mobileSearchButtonLoading = false;
+          this.mobileSearchShow = false;
+        })
+        .catch(error => {
+          this.mobileSearchButtonLoading = false;
+          this.mobileSearchShow = false;
+          console.log(error);
+        });
     },
-    //限制页面跳转输入框只能输入数字
+    // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
       this.pageJumpIndex = this.pageJumpIndex.replace(/[^\d]/g, "");
     },
-    //跳转指定页面
+    // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
       if (jumpPage == this.currentPage) return;
@@ -1385,7 +1914,7 @@ export default {
 
 <style lang="scss" scoped>
 .filter-container {
-  margin-bottom: 10px;
+  margin-bottom: 13px;
 }
 
 .table-input {

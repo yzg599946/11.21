@@ -1,5 +1,5 @@
 <template>
-  <timeslotTable :tableList="list"/>
+  <timeslotTable :category="category" />
 </template>
 
 <script>
@@ -11,20 +11,7 @@ export default {
   },
   data() {
     return {
-      list: [
-        {
-          timeslot: "00:00~01:00",
-          orderCount: "4"
-        },
-        {
-          timeslot: "01:00~02:00",
-          orderCount: "231"
-        },
-        {
-          timeslot: "02:00~03:00",
-          orderCount: "14"
-        }
-      ]
+      category: "telescope"
     };
   }
 };

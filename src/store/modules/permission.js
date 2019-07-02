@@ -39,7 +39,7 @@ const componentList = [
   {
     path: '/order-management',
     component: Layout,
-    redirect: '/order-management/index',
+    redirect: '/order-management',
     name: 'Order-management',
     meta: { title: '订单总管理', icon: 'dingdan' },
     children: [
@@ -61,15 +61,15 @@ const componentList = [
   {
     path: '/headline-management',
     component: Layout,
-    redirect: '/headline-management/index',
+    redirect: '/headline-management',
     name: 'Headline-management',
-    meta: { title: '头条管理', icon: 'toutiao' },
+    meta: { title: '头条菜单管理', icon: 'toutiao' },
     children: [
       {
         path: 'headline-order',
         name: 'Headline-order',
         component: () => import('@/views/headline-management/order'),
-        meta: { title: '订单管理', icon: 'order' }
+        meta: { title: '头条订单管理', icon: 'order' }
       },
       {
         path: 'headline-channel',
@@ -96,12 +96,23 @@ const componentList = [
     path: '/qutoutiao-management',
     component: Layout,
     redirect: '/qutoutiao-management',
-    children: [{
-      path: 'qutoutiao-management',
-      name: 'qutoutiao-management',
-      component: () => import('@/views/qutoutiao-management/index'),
-      meta: { title: '趣头条管理', icon: 'qutoutiao' }
-    }]
+    meta: { title: '趣头条菜单管理', icon: 'qutoutiao' },
+    name: 'Qutoutiao-management',
+    children: [
+      {
+        path: 'qutoutiao-order',
+        name: 'Qutoutiao-order',
+        component: () => import('@/views/qutoutiao-management/order'),
+        meta: { title: '趣头条订单管理', icon: 'order' }
+      },
+      {
+        path: 'qutoutiao-blank',
+        component: () => import('@/views/qutoutiao-management/blank'),
+        name: 'Qutoutiao-blank',
+        meta: { title: '其它管理', icon: 'timeslot' },
+        role: ['blank']
+      }
+    ]
   },
 
   {
@@ -121,31 +132,31 @@ const componentList = [
         path: 'tencent-repellent',
         component: () => import('@/views/tencent-management/repellent'),
         name: 'Tencent-repellent',
-        meta: { title: '驱蚊器渠道统计', icon: 'quwenqi' }
+        meta: { title: '驱蚊器渠道管理', icon: 'quwenqi' }
       },
       {
         path: 'tencent-apparel',
         component: () => import('@/views/tencent-management/apparel'),
         name: 'Tencent-apparel',
-        meta: { title: '服饰订单统计', icon: 'fuzhuang' }
+        meta: { title: '服饰订单管理', icon: 'fuzhuang' }
       },
       {
         path: 'tencent-cosmetic',
         component: () => import('@/views/tencent-management/cosmetic'),
         name: 'Tencent-cosmetic',
-        meta: { title: '化妆品订单统计', icon: 'huazhuangpin' }
+        meta: { title: '化妆品订单管理', icon: 'huazhuangpin' }
       },
       {
         path: 'tencent-watch',
         component: () => import('@/views/tencent-management/watch'),
         name: 'Tencent-watch',
-        meta: { title: '手表订单统计', icon: 'shoubiao' }
+        meta: { title: '手表订单管理', icon: 'shoubiao' }
       },
       {
         path: 'tencent-watchtimeslot',
         component: () => import('@/views/tencent-management/watchtimeslot'),
         name: 'Tencent-watchtimeslot',
-        meta: { title: '手表时段统计', icon: 'timeslot' }
+        meta: { title: '手表时段管理', icon: 'timeslot' }
       }
     ]
   },
@@ -154,18 +165,40 @@ const componentList = [
     path: '/temporary-management',
     component: Layout,
     redirect: '/temporary-management',
-    children: [{
-      path: 'temporary-management',
-      name: 'temporary-management',
-      component: () => import('@/views/temporary-management/index'),
-      meta: { title: '临时管理', icon: 'lingshi' }
-    }]
+    meta: { title: '临时菜单管理', icon: 'lingshi' },
+    name: 'Temporary-management',
+    children: [
+      {
+        path: 'temporary-order',
+        name: 'Temporary-order',
+        component: () => import('@/views/temporary-management/order'),
+        meta: { title: '临时订单管理', icon: 'order' }
+      },
+      {
+        path: 'temporary-channel',
+        component: () => import('@/views/temporary-management/channel'),
+        name: 'Temporary-channel',
+        meta: { title: '渠道统计', icon: 'channel' }
+      },
+      {
+        path: 'temporary-area',
+        component: () => import('@/views/temporary-management/area'),
+        name: 'Temporary-area',
+        meta: { title: '地区统计', icon: 'area' }
+      },
+      {
+        path: 'temporary-timeslot',
+        component: () => import('@/views/temporary-management/timeslot'),
+        name: 'Temporary-timeslot',
+        meta: { title: '时段统计', icon: 'timeslot' }
+      }
+    ]
   },
 
   {
     path: '/cosmetics-management',
     component: Layout,
-    redirect: '/cosmetics-management/index',
+    redirect: '/cosmetics-management',
     name: 'Cosmetics-management',
     meta: { title: '化妆品管理', icon: 'huazhuangpin' },
     children: [
@@ -493,7 +526,7 @@ const componentList = [
   {
     path: '/logistics-management',
     component: Layout,
-    redirect: '/logistics-management/index',
+    redirect: '/logistics-management',
     name: 'Logistics-management',
     meta: { title: '物流管理', icon: 'wuliu' },
     children: [
@@ -572,10 +605,10 @@ export function filterAsyncRoutes(asyncRouter) {
     const title = router.meta.title
     componentList.forEach(componetRouter => {
       var componetTitle
-      if (componetRouter.children.length === 1) {
-        componetTitle = componetRouter.children[0].meta.title
-      } else {
+      if (componetRouter.meta.title) {
         componetTitle = componetRouter.meta.title
+      } else {
+        componetTitle = componetRouter.children[0].meta.title
       }
       if (title === componetTitle) {
         accessedRoutes.push(componetRouter)

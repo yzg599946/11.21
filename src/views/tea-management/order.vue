@@ -1,5 +1,7 @@
 <template>
-  <orderTable :tableList="list"/>
+  <orderTable
+    :category="category"
+  />
 </template>
 
 <script>
@@ -10,46 +12,7 @@ export default {
   },
   data() {
     return {
-      list: [
-        {
-          id: "10001",
-          channel: "快手",
-          productName: "R-1007",
-          color: "奢华土豪金",
-          name: "李怀西",
-          phoneNumber: "18206991975",
-          count: "1",
-          price: "198",
-          repeatOrder: "0",
-          address: "广东省 XX市 XX镇 XX号",
-          createTime: "2019-06-07 09:33:33",
-          remarks: "",
-          isUseful: false,
-          logisticsState: "未导入",
-          salesman: "范银霜",
-          operator: "",
-          nuclearOrderInterval: ""
-        },
-        {
-          id: "10002",
-          channel: "一点咨询",
-          productName: "R-1008",
-          color: "奢华土豪银",
-          name: "吴坤",
-          phoneNumber: "18251244684",
-          count: "1",
-          price: "198",
-          repeatOrder: "0",
-          address: "广东省 XX市 XX镇 XX号",
-          createTime: "2019-06-08 09:33:33",
-          remarks: "",
-          isUseful: false,
-          logisticsState: "未导入",
-          salesman: "张佳坤",
-          operator: "",
-          nuclearOrderInterval: ""
-        }
-      ]
+      category:'tea'
     };
   }
 };
