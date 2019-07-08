@@ -2,11 +2,11 @@
   <div class="homepage-box">
     <div class="homepage-image" v-if="device=='desktop'">
       <div>
-        <img :src="url">
+        <img :src="url" />
       </div>
-      <div style="height:100%;">
+      <div v-if="time && count" style="height:100%;">
         <el-row :gutter="35">
-          <el-col :span="12">
+          <el-col v-if="time" :span="12">
             <el-table
               size="mini"
               max-height="200"
@@ -19,7 +19,7 @@
               <el-table-column prop="status" label="状态" width="100"></el-table-column>
             </el-table>
           </el-col>
-          <el-col :span="12">
+          <el-col v-if="count" :span="12">
             <el-table
               size="mini"
               max-height="200"
@@ -37,12 +37,12 @@
     </div>
     <div v-else style="width:100%;">
       <div style="display:flex;justify-content:center;margin-top:10px;">
-        <img :src="mobileUrl" style="height:100%;width:100%;">
+        <img :src="mobileUrl" style="height:100%;width:100%;" />
       </div>
       <div style="width:100%;display:flex;">
-        <div style="width:48%;">
+        <div v-if="time" style="width:48%;">
           <van-cell-group>
-            <van-cell size="mini" title="项目" value="状态"/>
+            <van-cell size="mini" title="项目" value="状态" />
             <van-cell
               v-for="item in overtimeTableData"
               :key="item.index"
@@ -52,9 +52,9 @@
             />
           </van-cell-group>
         </div>
-        <div style="width:48%;">
+        <div v-if="count" style="width:48%;">
           <van-cell-group>
-            <van-cell size="mini" title="项目" value="状态"/>
+            <van-cell size="mini" title="项目" value="状态" />
             <van-cell
               v-for="item in orderTableData"
               :key="item.index"
@@ -66,7 +66,7 @@
         </div>
       </div>
     </div>
-    <line-chart/>
+    <line-chart />
   </div>
 </template>
 
@@ -88,11 +88,13 @@ export default {
   data() {
     return {
       url: "http://i2.tiimg.com/689844/30dbd702eea630e1.jpg",
-      mobileUrl:"http://i2.tiimg.com/689844/42d4066671c03058.png",
+      mobileUrl: "http://i2.tiimg.com/689844/42d4066671c03058.png",
       overtimeTableData: [],
       orderTableData: [],
       headerShow: true,
-      device: ""
+      device: "",
+      time: false,
+      count: false
     };
   },
   created() {
@@ -113,22 +115,37 @@ export default {
     handleGetData() {
       //获取超时单信息
       getOrderStatus().then(res => {
+        console.log(res);
         let statusdataList = [];
-        const orderStatusList = res.data;
-        orderStatusList.forEach(orderStatusItem => {
-          let data = { category: orderStatusItem, status: "有超时单" };
-          statusdataList.push(data);
-        });
+        if (res.data) {
+          const orderStatusList = res.data;
+          orderStatusList.forEach(orderStatusItem => {
+            let data = { category: orderStatusItem, status: "有超时单" };
+            statusdataList.push(data);
+          });
+          this.time = true;
+        } else {
+          if (res.indexOf("没有权限，请不要乱来!") > -1) {
+            this.time = false;
+          }
+        }
         this.overtimeTableData = statusdataList;
       });
       //获取订单信息
       getOrderCount().then(res => {
         let countdataList = [];
-        const orderCountList = res.data;
-        orderCountList.forEach(orderCountItem => {
-          let data = { category: orderCountItem, status: "有订单" };
-          countdataList.push(data);
-        });
+        if (res.data) {
+          const orderCountList = res.data;
+          orderCountList.forEach(orderCountItem => {
+            let data = { category: orderCountItem, status: "有订单" };
+            countdataList.push(data);
+          });
+          this.count = true;
+        } else {
+          if (res.indexOf("没有权限，请不要乱来!") > -1) {
+            this.count = false;
+          }
+        }
         this.orderTableData = countdataList;
       });
     }

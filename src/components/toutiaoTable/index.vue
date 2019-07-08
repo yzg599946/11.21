@@ -666,7 +666,8 @@ import {
   editToutiaoUseful,
   editToutiaoOrder,
   getSalesmanList,
-  getProductList
+  getProductList,
+  exportToutiaoExcel
 } from "@/api/orderList";
 import {
   Pagination,
@@ -897,7 +898,7 @@ export default {
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getOrderList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -924,8 +925,8 @@ export default {
       this.listLoading = true;
       getToutiaoOrderList(this.category, {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentPage
       }).then(res => {
         const tableData = res.data.rows;
         if (tableData.length === 0) {
@@ -984,8 +985,8 @@ export default {
           orderList.push(orderItem);
         });
       });
+      this.list = orderList;
       this.listLoading = false;
-      return orderList;
     },
     // 获取业务员列表
     getSalesman() {
@@ -1178,8 +1179,8 @@ export default {
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentPage
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -1293,73 +1294,49 @@ export default {
     },
     // 选择表格尺寸
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getOrderList();
     },
-    // 选择表格当前页数
+    //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getOrderList();
     },
     // 导出excel
     handleDownload() {
-      //   this.downloadLoading = true;
-      //   import("@/vendor/Export2Excel").then(excel => {
-      //     const tHeader = [
-      //       "id",
-      //       "产品名称",
-      //       "套餐属性",
-      //       "名字",
-      //       "手机",
-      //       "数量",
-      //       "总价",
-      //       "重单",
-      //       "详细地址",
-      //       "创建时间",
-      //       "备注",
-      //       "是否可用",
-      //       "导入物流状态",
-      //       "业务员",
-      //       "操作员",
-      //       "核单间隔"
-      //     ];
-      //     const filterVal = [
-      //       "id",
-      //       "channel",
-      //       "productName",
-      //       "color",
-      //       "name",
-      //       "phoneNumber",
-      //       "count",
-      //       "price",
-      //       "repeatOrder",
-      //       "address",
-      //       "createTime",
-      //       "remarks",
-      //       "isUseful",
-      //       "logisticsState",
-      //       "salesman",
-      //       "operator",
-      //       "nuclearOrderInterval"
-      //     ];
-      //     const list = this.list;
-      //     const data = this.formatJson(filterVal, list);
-      //     excel.export_json_to_excel({
-      //       header: tHeader,
-      //       data,
-      //       filename:
-      //         new Date().toLocaleDateString() + new Date().toLocaleTimeString(),
-      //       autoWidth: true,
-      //       bookType: "xlsx"
-      //     });
-      //     this.downloadLoading = false;
-      //   });
+      this.downloadLoading = true;
+      if (this.multipleSelection.length === 0) {
+        this.$message.error("未选择任何数据");
+        this.downloadLoading = false;
+        return;
+      }
+
+      let ids = [];
+      this.multipleSelection.forEach(selectItem => {
+        ids.push(selectItem.id);
+      });
+      let idsStr = ids.join(",");
+      exportToutiaoExcel(this.category, {
+        ids: idsStr,
+        logistics: "yd"
+      }).then(res => {
+        const blob = new Blob([res], {
+          type: "application/vnd.mx-excel;charset=utf-8"
+        });
+        let myDate = new Date();
+        let year = myDate.getFullYear();
+        let month = myDate.getMonth() + 1;
+        let day = myDate.getDate();
+        var downloadElement = document.createElement("a");
+        var href = window.URL.createObjectURL(blob); //创建下载的链接
+        downloadElement.href = href;
+        downloadElement.download = `订单 ${year}-${month}-${day}.xls`; //下载后文件名
+        document.body.appendChild(downloadElement);
+        downloadElement.click(); //点击下载
+        document.body.removeChild(downloadElement); //下载完成移除元素
+        window.URL.revokeObjectURL(href); //释放掉blob对象
+      });
+      this.downloadLoading = false;
     },
     // 格式化数据
     formatJson(filterVal, jsonData) {
@@ -1435,7 +1412,7 @@ export default {
     // 重载页面
     reloadPage() {
       if (this.paramsStorage === {}) {
-        this.list = this.getOrderList();
+        this.getOrderList();
       } else {
         let searchList = [];
         getToutiaoOrderList(this.category, this.paramsStorage).then(res => {
@@ -1797,8 +1774,8 @@ export default {
       this.mobileSearchButtonLoading = true;
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentpage
       };
       timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
       timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";

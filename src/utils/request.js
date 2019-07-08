@@ -13,7 +13,7 @@ const service = axios.create({
     return data
   }],
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  timeout: 5000, // request timeout
+  // timeout: 5000, // request timeout
   withCredentials: true
 })
 
@@ -49,9 +49,16 @@ service.interceptors.response.use(
    * You can also judge the status by HTTP Status Code
    */
   response => {
+    console.log(response)
     if (response.data.type === 'application/vnd.mx-excel') {
       return response.data
     }
+    // if (response.status === 200) {
+    //   if (response.data.indexOf('没有权限，请不要乱来!') > -1) {
+    //     return response.data
+    //   }
+    // }
+
     const res = response.data
     // if the custom code is not 20000, it is judged as an error.
     if (res.status !== 200) {

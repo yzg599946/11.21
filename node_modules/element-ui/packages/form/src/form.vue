@@ -49,6 +49,12 @@
     },
     watch: {
       rules() {
+        // remove then add event listeners on form-item after form rules change
+        this.fields.forEach(field => {
+          field.removeValidateEvents();
+          field.addValidateEvents();
+        });
+
         if (this.validateOnRuleChange) {
           this.validate(() => {});
         }
@@ -56,6 +62,7 @@
     },
     computed: {
       autoLabelWidth() {
+        if (!this.potentialLabelWidthArr.length) return 0;
         const max = Math.max(...this.potentialLabelWidthArr);
         return max ? `${max}px` : '';
       }

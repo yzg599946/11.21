@@ -13,7 +13,7 @@
       </div>
       <el-form-item prop="username">
         <span class="svg-container">
-          <svg-icon icon-class="user"/>
+          <svg-icon icon-class="user" />
         </span>
         <el-input
           ref="username"
@@ -27,7 +27,7 @@
       </el-form-item>
       <el-form-item prop="password">
         <span class="svg-container">
-          <svg-icon icon-class="password"/>
+          <svg-icon icon-class="password" />
         </span>
         <el-input
           :key="passwordType"
@@ -40,12 +40,12 @@
           auto-complete="on"
         />
         <span class="show-pwd" @click="showPwd">
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
+          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
         </span>
       </el-form-item>
       <el-form-item prop="verification" class="verify-item">
         <span class="svg-container">
-          <svg-icon icon-class="verify"/>
+          <svg-icon icon-class="verify" />
         </span>
         <el-input
           class="verify-input"
@@ -93,19 +93,19 @@ export default {
       }
     };
     const validateUsername = (rule, value, callback) => {
-      if (value.length < 1){
+      if (value.length < 1) {
         callback(new Error("请输入用户名"));
-      }else{
+      } else {
         callback();
       }
     };
     const validateVerification = (rule, value, callback) => {
-      if (value.length < 1){
+      if (value.length < 1) {
         callback(new Error("请输入验证码"));
-      }else{
+      } else {
         callback();
       }
-    }
+    };
     return {
       loginForm: {
         username: "",
@@ -170,7 +170,7 @@ export default {
       });
     },
     handleGetVerifyCode() {
-      getVerifyCode(this.loginForm.username);
+      getVerifyCode({ username: this.loginForm.username });
       this.time();
     },
     time() {

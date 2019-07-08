@@ -187,6 +187,7 @@
     <!-- 产品列表 -->
     <el-table
       size="mini"
+      ref="orderTable"
       v-loading="listLoading"
       @row-dblclick="handleEdit"
       @cell-click="handleUseful"
@@ -195,6 +196,7 @@
       fit
       border
       show-summary
+      useVirtual
       :max-height="tableMaxHeight"
       :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
       style="width: 100%;"
@@ -314,13 +316,12 @@
     </el-table>
     <!-- PC端 分页器 -->
     <el-pagination
-      v-if="device=='desktop'"
+      v-if="device!='mobile'"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       :current-page="currentPage"
       :page-sizes="pagesizes"
       :page-size="pagesize"
-      hide-on-single-page
       layout="total, sizes, prev, pager, next, jumper"
       :total="list.length"
       class="pagination"
@@ -673,7 +674,8 @@ import {
   getSalesmanList,
   getChannelList,
   getProductList,
-  getColorList
+  getColorList,
+  importJD
 } from "@/api/orderList";
 import { setTimeout, clearTimeout } from "timers";
 import {
@@ -691,7 +693,6 @@ import {
   ActionSheet,
   Search
 } from "vant";
-import channelVue from "../../views/heater-management/channel.vue";
 
 Vue.use(Pagination);
 Vue.use(Button);
@@ -826,8 +827,8 @@ export default {
       downloadLoading: false,
       listLoading: false,
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20, //单页内条数
+      pagesizes: [50, 500, 1000, 5000], //单页最大显示条数
+      pagesize: 50, //单页内条数
       salemanWidth: "",
       importTypeDialogVisible: false,
       multipleSelection: [],
@@ -877,12 +878,11 @@ export default {
       clearSearchButtonLoading: false,
       paramsStorage: {},
       contains: false,
-      rows: 1000,
-      page: 1
+      jdSelect: []
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getOrderList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -911,14 +911,10 @@ export default {
       this.listLoading = true;
       getOuterChainOrder(this.category, {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentpage
       }).then(res => {
         const tableData = res.data.rows;
-        if (tableData.length === 0) {
-          this.listLoading = false;
-          return;
-        }
         tableData.forEach(tableItem => {
           const {
             id,
@@ -962,8 +958,8 @@ export default {
           orderList.push(orderItem);
         });
       });
+      this.list = orderList;
       this.listLoading = false;
-      return orderList;
     },
     // 获取业务员列表
     getSalesman() {
@@ -1191,8 +1187,8 @@ export default {
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentpage
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -1219,11 +1215,6 @@ export default {
       getOuterChainOrder(this.category, paramsObj)
         .then(res => {
           const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.searchButtonLoading = false;
-            this.listLoading = false;
-            return;
-          }
           tableData.forEach(tableItem => {
             const {
               id,
@@ -1304,19 +1295,13 @@ export default {
     },
     // 选择表格尺寸
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getOrderList();
     },
-    // 选择表格当前页数
+    //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getOrderList();
     },
     // 导出excel
     handleDownload() {
@@ -1336,12 +1321,17 @@ export default {
         ids: idsStr,
         logistics: "yd"
       }).then(res => {
-        console.log(res.data)
-        const blob = new Blob([res], { type: "application/vnd.mx-excel;charset=utf-8" });
+        const blob = new Blob([res], {
+          type: "application/vnd.mx-excel;charset=utf-8"
+        });
+        let myDate = new Date();
+        let year = myDate.getFullYear();
+        let month = myDate.getMonth() + 1;
+        let day = myDate.getDate();
         var downloadElement = document.createElement("a");
         var href = window.URL.createObjectURL(blob); //创建下载的链接
         downloadElement.href = href;
-        downloadElement.download = "统计.xlsx"; //下载后文件名
+        downloadElement.download = `订单 ${year}-${month}-${day}.xls`; //下载后文件名
         document.body.appendChild(downloadElement);
         downloadElement.click(); //点击下载
         document.body.removeChild(downloadElement); //下载完成移除元素
@@ -1378,19 +1368,36 @@ export default {
     handleExportDB() {},
     // 批量导入京东
     handleBatchImportIntoJD() {
-      if (!this.multipleSelection.length) {
+      if (this.multipleSelection.length === 0) {
         this.$message.error("未选择任何数据");
       } else {
+        this.jdSelect = this.multipleSelection;
         this.importTypeDialogVisible = true;
       }
     },
     // 空运
     handleImportSky() {
+      let ids = [];
+      this.jdSelect.forEach(item => {
+        ids.push(item.id);
+      });
+      let idsStr = ids.join(",");
+      importJD(this.category, { ids: idsStr, trans: 2 }).then(res => {
+        console.log(res);
+      });
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
     // 陆运
     handleImportLand() {
+      let ids = [];
+      this.jdSelect.forEach(item => {
+        ids.push(item.id);
+      });
+      let idsStr = ids.join(",");
+      importJD(this.category, { ids: idsStr, trans: 1 }).then(res => {
+        console.log(res);
+      });
       this.$message.success("操作成功");
       this.importTypeDialogVisible = false;
     },
@@ -1423,64 +1430,62 @@ export default {
     // 重载页面
     reloadPage() {
       if (this.paramsStorage === {}) {
-        this.list = this.getOrderList();
+        this.getOrderList();
       } else {
         let searchList = [];
-        getOuterChainOrderClothes(this.category, this.paramsStorage).then(
-          res => {
-            const tableData = res.data.rows;
-            tableData.forEach(tableItem => {
-              const {
-                id,
-                cpName,
-                pid,
-                productName,
-                colorName,
-                username,
-                telephone,
-                totalCost,
-                pNum,
-                num,
-                price,
-                size,
-                isRepeat,
-                address,
-                createTime,
-                remark,
-                mode,
-                isImport,
-                name,
-                uid,
-                operator,
-                operatingTime
-              } = tableItem;
-              const orderItem = {
-                id: id,
-                channel: cpName,
-                pid: pid,
-                productName: productName,
-                color: colorName,
-                name: name,
-                phoneNumber: telephone,
-                count: num,
-                price: totalCost,
-                size: size,
-                repeatOrder: isRepeat,
-                address: address,
-                createTime: createTime,
-                remarks: remark,
-                isUseful: mode,
-                logisticsState: isImport,
-                salesman: username,
-                uid: uid,
-                operator: operator,
-                nuclearOrderInterval: operatingTime
-              };
-              searchList.push(orderItem);
-            });
-            this.list = searchList;
-          }
-        );
+        getOuterChainOrder(this.category, this.paramsStorage).then(res => {
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const {
+              id,
+              cpName,
+              pid,
+              productName,
+              colorName,
+              username,
+              telephone,
+              totalCost,
+              pNum,
+              num,
+              price,
+              size,
+              isRepeat,
+              address,
+              createTime,
+              remark,
+              mode,
+              isImport,
+              name,
+              uid,
+              operator,
+              operatingTime
+            } = tableItem;
+            const orderItem = {
+              id: id,
+              channel: cpName,
+              pid: pid,
+              productName: productName,
+              color: colorName,
+              name: name,
+              phoneNumber: telephone,
+              count: num,
+              price: totalCost,
+              size: size,
+              repeatOrder: isRepeat,
+              address: address,
+              createTime: createTime,
+              remarks: remark,
+              isUseful: mode,
+              logisticsState: isImport,
+              salesman: username,
+              uid: uid,
+              operator: operator,
+              nuclearOrderInterval: operatingTime
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        });
       }
     },
 
@@ -1800,7 +1805,7 @@ export default {
       let paramsObj = { contains: contains, rows: rows, page: page };
       timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
       timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      this.channelVue ? (paramsObj.cid = this.channelVue) : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
       this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
       this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
       repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
