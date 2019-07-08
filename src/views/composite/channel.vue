@@ -285,6 +285,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'composite-channel',
   data() {
     return {
       list: [],

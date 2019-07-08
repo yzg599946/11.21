@@ -5,6 +5,7 @@
 import channelTable from "@/components/channelTable";
 
 export default {
+  name:'telescope-channel',
   components: {
     channelTable
   },

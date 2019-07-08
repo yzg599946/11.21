@@ -6,6 +6,7 @@
 import timeslotTable from "@/components/timeslotTable";
 
 export default {
+  name:'temporary-time',
   components: {
     timeslotTable
   },

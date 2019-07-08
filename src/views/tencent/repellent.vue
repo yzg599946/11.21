@@ -2,7 +2,7 @@
 
 <script>
 export default {
-  name: "repellent",
+  name: "tencent-repellent",
   components: {},
   data() {
     return {};

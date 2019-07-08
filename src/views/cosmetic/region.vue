@@ -6,6 +6,7 @@
 import areaTable from "@/components/areaTable";
 
 export default {
+  name:'cosmetic-region',
   components: {
     areaTable
   },

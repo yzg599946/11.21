@@ -119,6 +119,14 @@
         :loading="importLoading"
         @click="handleImport"
       >导入物流</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-download"
+        :loading="exportLoading"
+        @click="handleExportToutiao"
+      >导出头条</el-button>
     </div>
     <!-- 移动端 功能按钮 -->
     <div v-else class="filter-mobile">
@@ -525,6 +533,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'logistics-yd',
   data() {
     return {
       list: [],
@@ -636,6 +645,7 @@ export default {
       currentEditID: 0,
       downloadLoading: false,
       importLoading: false,
+      exportLoading:false,
       listLoading: false,
       currentPage: 1, //当前页
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
@@ -1037,6 +1047,8 @@ export default {
     handlePreview(file) {
       console.log(file);
     },
+    // 导出头条
+    handleExportToutiao(){},
     //格式化数据
     formatJson(filterVal, jsonData) {
       return jsonData.map(v =>

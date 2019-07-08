@@ -7,6 +7,7 @@
 <script>
 import orderTable from "@/components/orderTable";
 export default {
+  name:'shaver-order',
   components: {
     orderTable
   },

@@ -509,6 +509,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'logistics-jd',
   data() {
     return {
       list: [],

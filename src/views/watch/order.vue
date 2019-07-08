@@ -7,6 +7,7 @@
 <script>
 import orderTable from "@/components/orderTable";
 export default {
+  name:'watch-order',
   components: {
     orderTable
   },

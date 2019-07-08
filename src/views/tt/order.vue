@@ -7,6 +7,7 @@
 <script>
 import toutiaoTable from "@/components/toutiaoTable";
 export default {
+      name:'tt-order',
   components: {
     toutiaoTable
   },

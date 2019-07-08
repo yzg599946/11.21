@@ -7,6 +7,7 @@
 <script>
 import orderTable from "@/components/orderTable";
 export default {
+  name:'tea-order',
   components: {
     orderTable
   },

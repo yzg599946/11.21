@@ -1,30 +1,18 @@
 <template>
-  <timeslotTable :tableList="list"/>
+  <timeslotTable :category="category" />
 </template>
 
 <script>
 import timeslotTable from "@/components/timeslotTable";
 
 export default {
+  name: "watch-time",
   components: {
     timeslotTable
   },
   data() {
     return {
-      list: [
-        {
-          timeslot: "00:00~01:00",
-          orderCount: "4"
-        },
-        {
-          timeslot: "01:00~02:00",
-          orderCount: "231"
-        },
-        {
-          timeslot: "02:00~03:00",
-          orderCount: "14"
-        }
-      ]
+      category: "watch"
     };
   }
 };

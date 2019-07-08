@@ -198,6 +198,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'system-role',
   data() {
     return {
       list: [],

@@ -5,6 +5,7 @@
 import channelTable from "@/components/channelTable";
 
 export default {
+      name:'tt-channel',
   components: {
     channelTable
   },

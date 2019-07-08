@@ -498,6 +498,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'order-order',
   data() {
     return {
       list: [],

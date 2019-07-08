@@ -393,7 +393,7 @@ export default {
     };
   },
   created() {
-    this.list = this.getAreaStatistics();
+    this.getAreaStatistics();
     this.device = this.$store.state.app.device;
     this.getSalesman();
     this.getChannel();
@@ -416,8 +416,8 @@ export default {
       this.listLoading = true;
       getOuterChainAreaStatistics(this.category, {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentPage
       }).then(res => {
         const dataList = res.data.rows;
         if (dataList.length === 0) {
@@ -430,8 +430,8 @@ export default {
           orderList.push(listItem);
         });
       });
+      this.list = orderList;
       this.listLoading = false;
-      return orderList;
     },
     // 获取业务员列表
     getSalesman() {
@@ -500,8 +500,8 @@ export default {
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentPage
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -541,19 +541,13 @@ export default {
     },
     // 选择表格尺寸
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getAreaStatistics();
     },
-    // 选择表格当前页数
+    //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getAreaStatistics();
     },
 
     /* 移动端事件 */

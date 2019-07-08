@@ -196,6 +196,7 @@ import {
 Vue.use(Pagination);
 
 export default {
+  name:'system-function',
   data() {
     return {
       list: [],

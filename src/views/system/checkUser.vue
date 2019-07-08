@@ -158,6 +158,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'system-checkUser',
   data() {
     return {
       list: [],

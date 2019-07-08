@@ -280,6 +280,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'system-user',
   data() {
     return {
       list: [],

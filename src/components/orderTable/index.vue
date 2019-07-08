@@ -912,7 +912,7 @@ export default {
       getOuterChainOrder(this.category, {
         contains: this.contains,
         rows: this.pagesize,
-        page: this.currentpage
+        page: this.currentpage || 1
       }).then(res => {
         const tableData = res.data.rows;
         tableData.forEach(tableItem => {
@@ -1188,7 +1188,7 @@ export default {
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
-        page: this.currentpage
+        page: this.currentpage || 1
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])

@@ -351,6 +351,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
+  name:'order-channel',
   data() {
     return {
       list: [],
