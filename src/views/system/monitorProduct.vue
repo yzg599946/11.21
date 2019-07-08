@@ -199,6 +199,7 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { getMonitorProdutcList } from "@/api/orderList";
 import { parseTime } from "@/utils";
 import { setTimeout, clearTimeout } from "timers";
@@ -234,6 +235,7 @@ Vue.use(Search);
 
 export default {
   name:'system-monitorProduct',
+  directives: { permission },
   data() {
     return {
       list: [],

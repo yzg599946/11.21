@@ -6,7 +6,9 @@ const state = {
   token: getToken(),
   name: '',
   avatar: '',
-  menu: ''
+  roles: '',
+  menus: '',
+  username: ''
 }
 
 const mutations = {
@@ -21,6 +23,12 @@ const mutations = {
   },
   SET_ROLES: (state, roles) => {
     state.roles = roles
+  },
+  SET_MENUS: (state, menus) => {
+    state.nemus = menus
+  },
+  SET_USERNAME: (state, username) => {
+    state.username = username
   }
 }
 
@@ -50,10 +58,14 @@ const actions = {
         }
         const avatar = 'http://i2.tiimg.com/689844/ec5ce3a030c3a20b.png'
         const user = data.user
-        const roles = data.menu
+        const menus = data.menu
+        const roles = data.functionList
+        const username = data.username
         commit('SET_ROLES', roles)
         commit('SET_NAME', user)
         commit('SET_AVATAR', avatar)
+        commit('SET_MENUS', menus)
+        commit('SET_USERNAME', username)
         resolve(data)
       }).catch(error => {
         reject(error)

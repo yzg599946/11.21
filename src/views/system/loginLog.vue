@@ -157,6 +157,7 @@
 
 <script>
 import { getLoginLog, getSalesmanList } from "@/api/orderList";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import Vue from "vue";
 import {
   Pagination,
@@ -190,6 +191,7 @@ Vue.use(Search);
 
 export default {
   name:'system-loginLog',
+  directives: { permission },
   data() {
     return {
       list: [],

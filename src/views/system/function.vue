@@ -8,6 +8,7 @@
         <!-- PC端 功能按钮 -->
         <div v-if="device=='desktop'" class="filter-container">
           <el-button
+            v-permission="['system-function-list-insert']"
             size="mini"
             class="filter-item"
             type="primary"
@@ -48,8 +49,8 @@
           </el-table-column>
           <el-table-column label="操作" :width="300" align="center">
             <template slot-scope="scope">
-              <el-button @click="handleUpdateClick(scope.row)" type="text" size="small">更新</el-button>
-              <el-button @click="handleDeleteClick(scope.row)" type="text" size="small">删除</el-button>
+              <el-button v-permission="['system-function-list-update']" @click="handleUpdateClick(scope.row)" type="text" size="small">更新</el-button>
+              <el-button v-permission="['system-function-list-delete']" @click="handleDeleteClick(scope.row)" type="text" size="small">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -181,6 +182,7 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { parseTime } from "@/utils";
 import { setTimeout, clearTimeout } from "timers";
 import { Pagination } from "vant";
@@ -197,6 +199,7 @@ Vue.use(Pagination);
 
 export default {
   name:'system-function',
+  directives: { permission },
   data() {
     return {
       list: [],

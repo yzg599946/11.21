@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div v-permission="[this.category + '-menu']" class="app-container">
     <!-- PC端 功能按钮 -->
     <div v-if="device=='desktop'" class="filter-container">
       <el-date-picker
@@ -14,6 +14,7 @@
         size="mini"
       ></el-date-picker>
       <el-select
+        v-permission="[ this.category + '-list-user']"
         multiple
         size="mini"
         v-model="salemanValue"
@@ -158,6 +159,7 @@
         @click="handleClearSearch"
       >清空</el-button>
       <el-button
+        v-permission="[ this.category + '-list-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -166,6 +168,7 @@
         @click="handleDownload"
       >导出excel</el-button>
       <el-button
+        v-permission="[ this.category + '-list-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -665,6 +668,7 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { parseTime } from "@/utils";
 import {
   getOuterChainOrder,
@@ -678,6 +682,7 @@ import {
   importJD
 } from "@/api/orderList";
 import { setTimeout, clearTimeout } from "timers";
+import store from "@/store";
 import {
   Pagination,
   Button,
@@ -711,6 +716,7 @@ Vue.use(Search);
 export default {
   name: "orderTable",
   props: ["category"],
+  directives: { permission },
   data() {
     return {
       list: [],
@@ -1036,6 +1042,11 @@ export default {
         let count = 0;
         if (column.label == undefined) return;
         if (column.label == "是否可用") {
+          //判断权限
+          const roles = store.getters && store.getters.roles;
+          if (roles.indexOf(this.category + "-list-mode") == -1) {
+            return;
+          }
           this.list.forEach(item => {
             if (item.id == row.id) {
               this.handleChangeUseful({
@@ -1089,6 +1100,11 @@ export default {
     // 双击编辑
     handleEdit(e) {
       if (this.device == "mobile") return;
+      //判断权限
+      const roles = store.getters && store.getters.roles;
+      if (roles.indexOf(this.category + "-list-update") == -1) {
+        return;
+      }
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;
@@ -1296,12 +1312,12 @@ export default {
     // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
-      this.getOrderList();
+      this.reloadPage();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
-      this.getOrderList();
+      this.reloadPage();
     },
     // 导出excel
     handleDownload() {

@@ -126,6 +126,7 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { getCheckLoginList } from "@/api/orderList";
 import {
   Pagination,
@@ -159,6 +160,7 @@ Vue.use(Search);
 
 export default {
   name:'system-checkUser',
+  directives: { permission },
   data() {
     return {
       list: [],

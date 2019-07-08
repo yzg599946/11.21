@@ -14,6 +14,7 @@
         size="mini"
       ></el-date-picker>
       <el-select
+        v-permission="['tt-list-user']"
         multiple
         size="mini"
         v-model="salemanValue"
@@ -162,6 +163,7 @@
         @click="handleClearSearch"
       >清空</el-button>
       <el-button
+        v-permission="['tt-list-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -170,6 +172,7 @@
         @click="handleDownload"
       >导出excel</el-button>
       <el-button
+        v-permission="['tt-list-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -659,6 +662,7 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { parseTime } from "@/utils";
 import { setTimeout, clearTimeout } from "timers";
 import {
@@ -702,6 +706,7 @@ Vue.use(Search);
 export default {
   name: "toutiaoTable",
   props: ["category"],
+  directives: { permission },
   data() {
     return {
       list: [],
@@ -1033,6 +1038,11 @@ export default {
         let count = 0;
         if (column.label == undefined) return;
         if (column.label == "是否可用") {
+          //判断权限
+          const roles = store.getters && store.getters.roles;
+          if (roles.indexOf(this.category + "-list-mode") == -1) {
+            return;
+          }
           this.list.forEach(item => {
             if (item.id == row.id) {
               this.handleEditUseful({
@@ -1086,6 +1096,11 @@ export default {
     // 双击编辑
     handleEdit(e) {
       if (this.device == "mobile") return;
+      //判断权限
+      const roles = store.getters && store.getters.roles;
+      if (roles.indexOf(this.category + "-list-update") == -1) {
+        return;
+      }
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;

@@ -19,6 +19,7 @@
         @click="handleSearch"
       >搜索</el-button>
       <el-button
+        v-permission="['system-user-list-insert']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -49,7 +50,7 @@
       :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
       style="width: 100%;"
     >
-      <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
+      <el-table-column v-if="device=='desktop'" fixed type="selection" width="60" align="center"></el-table-column>
       <el-table-column label="id" :width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
@@ -76,14 +77,14 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="device=='desktop'"
+        v-if="device=='desktop'&& checkPermission(['system-user-list-update','system-user-list-delete'])"
         label="操作"
         :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
-          <el-button @click="handleUpdata(scope.row)" type="text" size="small">更新</el-button>
-          <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+          <el-button v-permission="['system-user-list-update']" @click="handleUpdata(scope.row)" type="text" size="small">更新</el-button>
+          <el-button v-permission="['system-user-list-delete']" @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -240,6 +241,8 @@
 
 <script>
 import Vue from "vue";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
+import checkPermission from '@/utils/permission' // 权限判断函数
 import {
   getUserList,
   deleteUser,
@@ -281,6 +284,7 @@ Vue.use(Search);
 
 export default {
   name:'system-user',
+  directives: { permission },
   data() {
     return {
       list: [],
@@ -349,6 +353,7 @@ export default {
     }
   },
   methods: {
+    checkPermission,
     // 获取表格列表
     getOrderList() {
       let orderList = [];

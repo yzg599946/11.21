@@ -104,6 +104,7 @@
         @click="handleClearSearch"
       >清空</el-button>
       <el-button
+        v-permission="['logistics-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -112,6 +113,7 @@
         @click="handleDownload"
       >导出excel</el-button>
       <el-button
+        v-permission="['logistics-import']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -120,6 +122,7 @@
         @click="handleImport"
       >导入物流</el-button>
       <el-button
+        v-permission="['logistics-export']"
         size="mini"
         class="filter-item"
         type="primary"
@@ -493,7 +496,7 @@
 
 <script>
 import Vue from "vue";
-import Axios from "axios";
+import permission from "@/directive/permission/index.js"; // 权限判断指令
 import {
   getYundaLogisticsList,
   getSalesmanList,
@@ -534,6 +537,7 @@ Vue.use(Search);
 
 export default {
   name:'logistics-yd',
+  directives: { permission },
   data() {
     return {
       list: [],
