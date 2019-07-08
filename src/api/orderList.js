@@ -733,6 +733,25 @@ export function exportToutiao(data, type) {
   })
 }
 
+// 计算签收率
+export function logisticsSigned(data) {
+  return request({
+    url: `/admin/logistics/jd/signed`,
+    method: 'post',
+    data
+  })
+}
+
+// 批量查询物流状态
+
+export function logisticslogBatch(data) {
+  return request({
+    url: `/admin/logistics/jd/logBatch`,
+    method: 'post',
+    data
+  })
+}
+
 /* 物流管理 end */
 
 /* 微信管理 start */

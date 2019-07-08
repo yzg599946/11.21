@@ -119,6 +119,20 @@
         :loading="exportLoading"
         @click="handleExportToutiao"
       >导出头条</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-download"
+        @click="handleSigned"
+      >当前物流签收率</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-download"
+        @click="handleExportLogbatch"
+      >批量查询物流</el-button>
     </div>
     <!-- 移动端 功能按钮 -->
     <div v-else class="filter-mobile">
@@ -474,7 +488,9 @@ import {
   getSalesmanList,
   getChannelList,
   getProductList,
-  exportToutiao
+  exportToutiao,
+  logisticsSigned,
+  logisticslogBatch
 } from "@/api/orderList";
 import { parseTime } from "@/utils";
 import { setTimeout, clearTimeout } from "timers";
@@ -509,7 +525,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'logistics-jd',
+  name: "logistics-jd",
   data() {
     return {
       list: [],
@@ -1044,7 +1060,6 @@ export default {
       this.accountValue ? (paramsObj.remark = this.accountValue) : "";
 
       exportToutiao(paramsObj, "jd").then(res => {
-
         // const blob = new Blob([res], {
         //   type: "application/vnd.mx-excel;charset=utf-8"
         // });
@@ -1101,6 +1116,47 @@ export default {
       });
       return sums;
     },
+    // 当前物流签收率
+    handleSigned() {
+      let paramsObj = {};
+      let channelLabel = "";
+      this.channelOptions.forEach(channelItem => {
+        if (channelItem.value == this.channelValue) {
+          channelLabel = channelItem.label;
+        }
+      });
+
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      channelLabel ? (paramsObj.senderName = channelLabel) : "";
+      this.nameInput ? (paramsObj.receiveName = this.nameInput) : "";
+      this.productValue ? (paramsObj.productId = this.productValue) : "";
+      this.phoneNumberInput
+        ? (paramsObj.receiveMobile = this.phoneNumberInput)
+        : "";
+      this.minPriceInput ? (paramsObj.totalCost = this.minPriceInput) : "";
+      this.maxPriceInput ? (paramsObj.totalCostEnd = this.maxPriceInput) : "";
+      this.logisticsValue ? (paramsObj.logistics = this.logisticsValue) : "";
+      this.accountValue ? (paramsObj.remark = this.accountValue) : "";
+      if (this.salemanValue.length > 0) {
+        paramsObj.uids = this.salemanValue.join(",");
+      }
+      logisticsSigned(paramsObj).then(res => {
+        let result = res.data;
+        this.$alert(result, '当前签收率', {
+          confirmButtonText: "确定",
+          dangerouslyUseHTMLString:true
+        });
+      });
+    },
+
+    // 批量查询物流状态
+    handleExportLogbatch() {},
 
     /* 移动端事件 */
 
