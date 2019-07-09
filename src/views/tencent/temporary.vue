@@ -6,7 +6,7 @@
 import tencentTable from "@/components/tencentTable";
 
 export default {
-      name:'tencent-temporary',
+  name: "tencent-temporary",
   components: {
     tencentTable
   },

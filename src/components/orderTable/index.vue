@@ -188,157 +188,70 @@
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
     </div>
     <!-- 产品列表 -->
-    <!-- <el-table
+    <vxe-table
       size="mini"
       ref="orderTable"
-      v-loading="listLoading"
-      @row-dblclick="handleEdit"
+      :loading="listLoading"
+      @cell-dblclick="handleEdit"
       @cell-click="handleUseful"
-      @selection-change="handleSelectChange"
-      :summary-method="getSummaries"
-      fit
+      @select-change="handleSelectChange"
       border
-      show-summary
-      :rowHeight="40"
-      useVirtual
-      :height="tableMaxHeight"
-      :data="list"
-      style="width: 100%;"
+      highlight-hover-row
+      show-footer
+      :footer-method="footerMethod"
+      :max-height="tableMaxHeight"
+      :data.sync="list"
     >
-      <el-table-column
-        :show-overflow-tooltip="true"
-        v-if="device=='desktop'"
-        fixed
-        type="selection"
-        align="center"
-        width="50"
-      ></el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="ID" prop="id" align="center" width="80">
-        <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="渠道项目" width="120px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.channel.substring(0,scope.row.channel.indexOf('-')) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :show-overflow-tooltip="true"
-        prop="productName"
-        label="产品名称"
-        width="130px"
-        sortable
-        align="center"
-      >
-        <template slot-scope="scope">
-          <span>{{ scope.row.productName }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :show-overflow-tooltip="true"
-        prop="color"
-        label="颜色名称"
-        width="130px"
-        sortable
-        align="center"
-      >
-        <template slot-scope="scope">
-          <span>{{ scope.row.color }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="名字" width="100px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="手机" width="130px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.phoneNumber }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="数量" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.count }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="总价" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.price }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="重单" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.repeatOrder }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="详细地址" width="400px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.address }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="创建时间" width="200px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.createTime }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="备注" width="140px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.remarks }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="是否可用" width="100px" align="center">
-        <template slot-scope="scope">
-          <span
-            style="cursor:pointer"
-            :class="scope.row.isUseful==1?'blue':'red'"
-          >{{ scope.row.isUseful==1?'有效单':'无效单' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="导入物流状态" width="120px" align="center">
-        <template slot-scope="scope">
-          <span
-            :class="scope.row.logisticsState==1?'blue':'red'"
-          >{{ scope.row.logisticsState==1?'导入':'未导入' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="业务员" width="90px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.salesman }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="操作员" width="90px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.operator }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="核单间隔" width="120px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.nuclearOrderInterval }}</span>
-        </template>
-      </el-table-column>
-    </el-table>-->
-
-    <vxe-table size="mini" :loading="listLoading" border highlight-hover-row :height="tableMaxHeight" :data.sync="list">
-      <vxe-table-column type="selection" width="60"></vxe-table-column>
-      <vxe-table-column field="id" title="id" align="center" width="80" sortable show-overflow></vxe-table-column>
+      <vxe-table-column type="selection" width="30"></vxe-table-column>
+      <vxe-table-column field="id" title="id" align="center" width="80" show-overflow></vxe-table-column>
       <vxe-table-column field="channel" title="渠道项目" align="center" width="120" show-overflow></vxe-table-column>
-      <vxe-table-column field="productName" title="产品名称" align="center" width="150" show-overflow></vxe-table-column>
-      <vxe-table-column field="color" title="颜色名称" align="center" width="150" show-overflow></vxe-table-column>
-      <vxe-table-column field="name" title="名字" width="100px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="phoneNumber" title="手机" width="130px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="count" title="数量" width="80px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="price" title="总价" width="80px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="repeatOrder" title="重单" width="80px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="address" title="详细地址" width="400px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="createTime" title="创建时间" width="200px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="remarks" title="备注" width="140px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="scope.row.isUseful==1?'有效单':'无效单'" title="是否可用" width="100px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="scope.row.logisticsState==1?'导入':'未导入'" title="导入物流状态" width="120px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="salesman" title="业务员" width="90px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="operator" title="操作员" width="90px" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="nuclearOrderInterval" title="核单间隔" width="120px" align="center" show-overflow></vxe-table-column>
-
+      <vxe-table-column
+        field="productName"
+        title="产品名称"
+        sortable
+        align="center"
+        width="90"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column
+        field="color"
+        title="颜色名称"
+        sortable
+        align="center"
+        width="120"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column field="name" title="名字" width="90" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="phoneNumber" title="手机" width="100" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="count" title="数量" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="price" title="总价" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="repeatOrder" title="重单" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="address" title="详细地址" width="260" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="createTime" title="创建时间" width="150" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="remarks" title="备注" width="100" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column
+        field="isUseful"
+        title="是否可用"
+        width="80"
+        align="center"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column
+        field="logisticsState"
+        title="导入物流状态"
+        width="120"
+        align="center"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column field="salesman" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="operator" title="操作员" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column
+        field="nuclearOrderInterval"
+        title="核单间隔"
+        width="80"
+        align="center"
+        show-overflow
+      ></vxe-table-column>
     </vxe-table>
 
     <!-- PC端 分页器 -->
@@ -692,6 +605,7 @@
 
 <script>
 import Vue from "vue";
+import XEUtils from "xe-utils";
 import permission from "@/directive/permission/index.js"; // 权限判断指令
 import { parseTime } from "@/utils";
 import {
@@ -747,29 +661,18 @@ export default {
       pickerOptions: {
         shortcuts: [
           {
-            text: "最近一周",
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }
@@ -929,6 +832,9 @@ export default {
   computed: {
     deviceVal() {
       return this.$store.state.app.device;
+    },
+    mode(val){
+      return val == 0 ? '不可用' : '可用'
     }
   },
   watch: {
@@ -1026,7 +932,9 @@ export default {
         .catch(error => {
           console.log(error);
         });
-      this.listLoading = false;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -1093,7 +1001,7 @@ export default {
       this.tableMaxHeight = window.innerHeight - otherHeight;
     },
     // 单击复制
-    handleUseful(row, column, cell, event) {
+    handleUseful({ row, rowIndex, column, columnIndex }, event) {
       if (this.device == "mobile") return;
       if (this.clickFlag) {
         clearTimeout(this.clickFlag);
@@ -1101,8 +1009,8 @@ export default {
       }
       this.clickFlag = setTimeout(() => {
         let count = 0;
-        if (column.label == undefined) return;
-        if (column.label == "是否可用") {
+        if (column.title == undefined) return;
+        if (column.title == "是否可用") {
           //判断权限
           const roles = store.getters && store.getters.roles;
           if (roles.indexOf(this.category + "-list-mode") == -1) {
@@ -1110,7 +1018,7 @@ export default {
           }
           this.list.forEach(item => {
             if (item.id == row.id) {
-              this.handleChangeUseful({
+              this.handleEditUseful({
                 id: row.id,
                 mode: this.list[count].isUseful
               });
@@ -1159,7 +1067,7 @@ export default {
         });
     },
     // 双击编辑
-    handleEdit(e) {
+    handleEdit({ row, rowIndex, column, columnIndex }, event) {
       if (this.device == "mobile") return;
       //判断权限
       const roles = store.getters && store.getters.roles;
@@ -1170,14 +1078,14 @@ export default {
         clearTimeout(this.clickFlag);
         this.clickFlag = null;
       }
-      this.form.productType = e.productName;
-      this.form.name = e.name;
-      this.form.color = e.color;
-      this.form.count = e.count;
-      this.form.price = e.price;
-      this.form.remarks = e.remarks;
-      this.form.address = e.address;
-      this.currentEditID = e.id;
+      this.form.productType = row.productName;
+      this.form.name = row.name;
+      this.form.color = row.color;
+      this.form.count = row.count;
+      this.form.price = row.price;
+      this.form.remarks = row.remarks;
+      this.form.address = row.address;
+      this.currentEditID = row.id;
       this.editDialogVisible = true;
     },
     // 取消编辑
@@ -1336,7 +1244,7 @@ export default {
           : "width:" + inputWidth + "px";
     },
     // 选择发生改变
-    handleSelectChange(selection) {
+    handleSelectChange({ selection, checked, row, column }, event) {
       this.multipleSelection = selection;
     },
     // 导出德邦
@@ -1407,30 +1315,43 @@ export default {
       this.importTypeDialogVisible = false;
     },
     // 合计
-    getSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
-      let count = 0;
-      let price = 0;
-      columns.forEach((column, index) => {
-        if (index === 1) {
-          sums[index] = "合计";
-          return;
-        }
-        if (column.label == "数量") {
-          data.forEach(index => {
-            count = count + parseInt(index.count);
-          });
-          sums[index] = count || "";
-        }
-        if (column.label == "总价") {
-          data.forEach(index => {
-            price = price + parseInt(index.price);
-          });
-          sums[index] = price || "";
-        }
-      });
-      return sums;
+    // getSummaries(param) {
+    //   const { columns, data } = param;
+    //   const sums = [];
+    //   let count = 0;
+    //   let price = 0;
+    //   columns.forEach((column, index) => {
+    //     if (index === 1) {
+    //       sums[index] = "合计";
+    //       return;
+    //     }
+    //     if (column.label == "数量") {
+    //       data.forEach(index => {
+    //         count = count + parseInt(index.count);
+    //       });
+    //       sums[index] = count || "";
+    //     }
+    //     if (column.label == "总价") {
+    //       data.forEach(index => {
+    //         price = price + parseInt(index.price);
+    //       });
+    //       sums[index] = price || "";
+    //     }
+    //   });
+    //   return sums;
+    // },
+    footerMethod({ columns, data }) {
+      return [
+        columns.map((column, columnIndex) => {
+          if (columnIndex === 1) {
+            return "合计";
+          }
+          if (["count", "price"].includes(column.property)) {
+            return XEUtils.sum(data, column.property);
+          }
+          return "-";
+        })
+      ];
     },
 
     /* 移动端事件 */

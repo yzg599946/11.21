@@ -20,7 +20,7 @@ export function editOuterChainOrder(category, data) {
   })
 }
 
-// 导出excel表格
+// 导出excel表格 德邦
 export function exportOuterChainExcel(category, data) {
   return request({
     url: `/admin/${category}/outExcel`,

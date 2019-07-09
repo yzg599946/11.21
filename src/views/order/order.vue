@@ -1372,7 +1372,6 @@ export default {
         paramsObj.uids = uids.join(",");
       }
       this.paramsStorage = paramsObj;
-      console.log(paramsObj);
       getAllOrderList(this.category, this.paramsStorage)
         .then(res => {
           const tableData = res.data.rows;

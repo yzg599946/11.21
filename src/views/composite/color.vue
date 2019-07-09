@@ -498,7 +498,6 @@ export default {
     },
     // 删除
     handleDelete(row) {
-      console.log(row);
       this.deleteId = row.id;
       this.deleteName = row.name;
       if (!this.deleteDialogVisible) {
@@ -570,7 +569,6 @@ export default {
       if (JSON.stringify(this.paramsStorage) == "{}") {
         this.list = this.getOrderList();
       } else {
-        console.log(1);
         let searchList = [];
         getAllColorList(this.paramsStorage).then(res => {
           const tableData = res.data.rows;

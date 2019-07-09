@@ -1377,6 +1377,7 @@ export default {
     // 选择发生改变
     handleSelectChange(selection) {
       this.multipleSelection = selection;
+      console.log(selection)
     },
     // 导入德邦
     handleExportDB() {},
