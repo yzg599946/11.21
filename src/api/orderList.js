@@ -729,7 +729,7 @@ export function exportToutiao(data, type) {
     url: `/admin/logistics/${type}/tt/export`,
     method: 'post',
     data,
-    responseType: 'arraybuffer'
+    responseType: 'blob'
   })
 }
 

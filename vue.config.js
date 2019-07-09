@@ -36,17 +36,17 @@ module.exports = {
     overlay: {
       warnings: false,
       errors: true
-    },
-    proxy: {
-      // 代理
-      [process.env.VUE_APP_BASE_API]: {
-        target: `http://192.168.1.143:8089`,
-        changeOrigin: true,
-        pathRewrite: {
-          ['^' + process.env.VUE_APP_BASE_API]: ''
-        }
-      }
     }
+    // proxy: {
+    //   // 代理
+    //   [process.env.VUE_APP_BASE_API]: {
+    //     target: `http://192.168.1.143:8089`,
+    //     changeOrigin: true,
+    //     pathRewrite: {
+    //       ['^' + process.env.VUE_APP_BASE_API]: ''
+    //     }
+    //   }
+    // }
   },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that

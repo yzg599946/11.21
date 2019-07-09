@@ -6,7 +6,6 @@ module.exports = {
       style: true
     }, 'vant']
   ],
-
   presets: [
     '@vue/app'
   ]

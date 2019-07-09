@@ -123,14 +123,14 @@
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-download"
+        icon="el-icon-truck"
         @click="handleSigned"
       >当前物流签收率</el-button>
       <el-button
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-download"
+        icon="el-icon-refresh"
         @click="handleExportLogbatch"
       >批量查询物流</el-button>
     </div>
@@ -1060,21 +1060,21 @@ export default {
       this.accountValue ? (paramsObj.remark = this.accountValue) : "";
 
       exportToutiao(paramsObj, "jd").then(res => {
-        // const blob = new Blob([res], {
-        //   type: "application/vnd.mx-excel;charset=utf-8"
-        // });
-        // let myDate = new Date();
-        // let year = myDate.getFullYear();
-        // let month = myDate.getMonth() + 1;
-        // let day = myDate.getDate();
-        // var downloadElement = document.createElement("a");
-        // var href = window.URL.createObjectURL(blob); //创建下载的链接
-        // downloadElement.href = href;
-        // downloadElement.download = `订单 ${year}-${month}-${day}.xls`; //下载后文件名
-        // document.body.appendChild(downloadElement);
-        // downloadElement.click(); //点击下载
-        // document.body.removeChild(downloadElement); //下载完成移除元素
-        // window.URL.revokeObjectURL(href); //释放掉blob对象
+        const blob = new Blob([res], {
+          type: "application/csv;charset=utf-8"
+        });
+        let myDate = new Date();
+        let year = myDate.getFullYear();
+        let month = myDate.getMonth() + 1;
+        let day = myDate.getDate();
+        var downloadElement = document.createElement("a");
+        var href = window.URL.createObjectURL(blob); //创建下载的链接
+        downloadElement.href = href;
+        downloadElement.download = `订单 ${year}-${month}-${day}.csv`; //下载后文件名
+        document.body.appendChild(downloadElement);
+        downloadElement.click(); //点击下载
+        document.body.removeChild(downloadElement); //下载完成移除元素
+        window.URL.revokeObjectURL(href); //释放掉blob对象
       });
     },
     //业务员选择器宽度自适应
@@ -1148,15 +1148,35 @@ export default {
       }
       logisticsSigned(paramsObj).then(res => {
         let result = res.data;
-        this.$alert(result, '当前签收率', {
+        this.$alert(result, "当前签收率", {
           confirmButtonText: "确定",
-          dangerouslyUseHTMLString:true
+          dangerouslyUseHTMLString: true
         });
       });
     },
 
     // 批量查询物流状态
-    handleExportLogbatch() {},
+    handleExportLogbatch() {
+      if (this.multipleSelection.length === 0) {
+        this.$message.error("未选择任何订单");
+        return;
+      }
+      let ids = [];
+      this.multipleSelection.forEach(item =>{
+        ids.push(item.logisticsNumber)
+      })
+      let idsStr = ids.join(',')
+      logisticslogBatch({ deliveryIds: idsStr }).then(res => {
+        if(res.status == 200){
+          this.$message({
+            type:'success',
+            message:'更新成功'
+          })
+        }else{
+          this.$message.error('更新失败')
+        }
+      });
+    },
 
     /* 移动端事件 */
 
