@@ -88,7 +88,9 @@
       size="mini"
       border
       fit
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
+      useVirtual
+      :height="tableMaxHeight"
       style="width: 100%;"
       @cell-click="handleTimeSlot"
     >
@@ -122,13 +124,13 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -404,8 +406,9 @@ export default {
       dialogTableVisible: false,
       channelTitle: "",
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20, //单页内条数
+      pagesizes: [1000, 2000, 3000], //单页最大显示条数
+      pagesize: 1000, //单页内条数
+      listTotal: 0, //页面总数
       listLoading: false,
       device: "",
       mobileSearchShow: false,
@@ -437,14 +440,11 @@ export default {
       clearSearchButtonLoading: false,
       salemanWidth: "",
       pageJumpIndex: 1,
-      contains: false,
-      rows: 1000,
-      page: 1,
-      paramsStorage: {}
+      contains: false
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getSalesman();
     this.getChannel();
@@ -461,32 +461,44 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
+      let searchList = [];
+      this.searchButtonLoading = true;
       this.listLoading = true;
-      getOuterChainChannelStatistics(this.category, {
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
-      })
+        rows: this.pagesize,
+        page: this.currentPage
+      };
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.productValue ? (paramsObj.productId = this.productValue) : "";
+      this.cpName ? (paramsObj.cpName = this.cpName) : "";
+      if (this.salemanValue.length > 0) {
+        paramsObj.uids = this.salemanValue.join(",");
+      }
+      getOuterChainChannelStatistics(this.category, paramsObj)
         .then(res => {
-          const dataList = res.data.rows;
-          if (dataList.length === 0) {
-            this.listLoading = false;
-            return;
-          }
-          dataList.forEach(dataItem => {
-            const { cpName, pNum } = dataItem;
-            const listItem = { channel: cpName, orderCount: pNum };
-            orderList.push(listItem);
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const { cpName, pNum } = tableItem;
+            const orderItem = { channel: cpName, orderCount: pNum };
+            searchList.push(orderItem);
           });
+          this.list = searchList;
         })
         .catch(error => {
           console.log(error);
         });
       this.listLoading = false;
-      return orderList;
     },
     // 获取业务员列表
     getSalesman() {
@@ -549,57 +561,17 @@ export default {
     },
     // 搜索
     handleSearch() {
-      let searchList = [];
       this.searchButtonLoading = true;
-      this.listLoading = true;
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.rows,
-        page: this.page
-      };
-      this.timeSelectValue[0]
-        ? (paramsObj.createTime = this.timeSelectValue[0])
-        : "";
-      this.timeSelectValue[1]
-        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
-        : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.productValue ? (paramsObj.productId = this.productValue) : "";
-      this.cpName ? (paramsObj.cpName = this.cpName) : "";
-      if (this.salemanValue.length > 0) {
-        paramsObj.uids = this.salemanValue.join(",");
-      }
-      this.paramsStorage = paramsObj;
-      getOuterChainChannelStatistics(this.category, paramsObj)
-        .then(res => {
-          const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.searchButtonLoading = false;
-            this.listLoading = false;
-            return;
-          }
-          tableData.forEach(tableItem => {
-            const { cpName, pNum } = tableItem;
-            const orderItem = { channel: cpName, orderCount: pNum };
-            searchList.push(orderItem);
-          });
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-          this.list = searchList;
-        })
-        .catch(error => {
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-          console.log(error);
-        });
+      this.getList();
+      this.searchButtonLoading = false;
     },
     // 时段统计
     handleTimeSlot(row, column, cell, event) {
       this.gridData = [];
       this.channelTitle = row.channel;
-      getOuterChainTimeslotStatistics(this.category, { cpName: this.channelTitle }).then(res => {
-        console.log(res)
+      getOuterChainTimeslotStatistics(this.category, {
+        cpName: this.channelTitle
+      }).then(res => {
         const channelTimeDataList = res.data.rows;
         channelTimeDataList.forEach(channelTimeDataItem => {
           const { timeCount, tNum } = channelTimeDataItem;
@@ -621,33 +593,28 @@ export default {
         }
       }
     },
+    // 页面条数切换
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getList();
     },
-    // 选择表格当前页数
+    //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getList();
     },
 
     /* 移动端事件 */
 
     // 点击搜索
     handleSearchMobile() {
-      if(!this.mobileSearchShow){
+      if (!this.mobileSearchShow) {
         this.mobileSearchShow = true;
       }
     },
     // 取消搜索
     handleSearchMobileCancel() {
-       if(this.mobileSearchShow){
+      if (this.mobileSearchShow) {
         this.mobileSearchShow = false;
       }
     },
@@ -841,7 +808,11 @@ export default {
       }
       this.mobileSearchButtonLoading = true;
       let searchList = [];
-      let paramsObj = { contains: this.contains, rows: this.rows, page: this.page };
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.rows,
+        page: this.page
+      };
       timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
       timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
       channelId ? (paramsObj.cid = channelId) : "";
@@ -849,11 +820,10 @@ export default {
       if (uids.length > 0) {
         paramsObj.uids = uids.join(",");
       }
-      this.paramsStorage = paramsObj;
       getOuterChainChannelStatistics(this.category, paramsObj)
         .then(res => {
           const tableData = res.data.rows;
-          if(tableData.length === 0){
+          if (tableData.length === 0) {
             this.listLoading = false;
             return;
           }
@@ -874,10 +844,7 @@ export default {
     },
     // 分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+     this.getList();
     },
     // 返回列表
     handleDetailCancel() {
@@ -897,12 +864,9 @@ export default {
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.currentPage = jumpPage;
+      this.getList();
     }
   }
 };

@@ -188,7 +188,7 @@
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
     </div>
     <!-- 产品列表 -->
-    <el-table
+    <!-- <el-table
       size="mini"
       ref="orderTable"
       v-loading="listLoading"
@@ -199,7 +199,7 @@
       fit
       border
       show-summary
-      :rowHeight="30"
+      :rowHeight="40"
       useVirtual
       :height="tableMaxHeight"
       :data="list"
@@ -317,7 +317,30 @@
           <span>{{ scope.row.nuclearOrderInterval }}</span>
         </template>
       </el-table-column>
-    </el-table>
+    </el-table>-->
+
+    <vxe-table size="mini" :loading="listLoading" border highlight-hover-row :height="tableMaxHeight" :data.sync="list">
+      <vxe-table-column type="selection" width="60"></vxe-table-column>
+      <vxe-table-column field="id" title="id" align="center" width="80" sortable show-overflow></vxe-table-column>
+      <vxe-table-column field="channel" title="渠道项目" align="center" width="120" show-overflow></vxe-table-column>
+      <vxe-table-column field="productName" title="产品名称" align="center" width="150" show-overflow></vxe-table-column>
+      <vxe-table-column field="color" title="颜色名称" align="center" width="150" show-overflow></vxe-table-column>
+      <vxe-table-column field="name" title="名字" width="100px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="phoneNumber" title="手机" width="130px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="count" title="数量" width="80px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="price" title="总价" width="80px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="repeatOrder" title="重单" width="80px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="address" title="详细地址" width="400px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="createTime" title="创建时间" width="200px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="remarks" title="备注" width="140px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="scope.row.isUseful==1?'有效单':'无效单'" title="是否可用" width="100px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="scope.row.logisticsState==1?'导入':'未导入'" title="导入物流状态" width="120px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="salesman" title="业务员" width="90px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="operator" title="操作员" width="90px" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="nuclearOrderInterval" title="核单间隔" width="120px" align="center" show-overflow></vxe-table-column>
+
+    </vxe-table>
+
     <!-- PC端 分页器 -->
     <el-pagination
       v-if="device!='mobile'"
@@ -1234,100 +1257,9 @@ export default {
     // 搜索
     handleSearch() {
       if (this.searchVerify()) return;
-      this.listLoading = true;
       this.searchButtonLoading = true;
-      let searchList = [];
-
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.pagesize,
-        page: this.currentPage
-      };
-      this.timeSelectValue[0]
-        ? (paramsObj.createTime = this.timeSelectValue[0])
-        : "";
-      this.timeSelectValue[1]
-        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
-        : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.minIdInput ? (paramsObj.id = this.minIdInput) : "";
-      this.maxIdInput ? (paramsObj.idEnd = this.maxIdInput) : "";
-      this.repeatOrderValue ? (paramsObj.isRepeat = this.repeatOrderValue) : "";
-      this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
-      this.nameInput ? (paramsObj.name = this.nameInput) : "";
-      this.productValue ? (paramsObj.productId = this.productValue) : "";
-      this.phoneNumberInput
-        ? (paramsObj.telephone = this.phoneNumberInput)
-        : "";
-      this.minPriceInput ? (paramsObj.totalCost = this.minPriceInput) : "";
-      this.maxPriceInput ? (paramsObj.totalCostEnd = this.maxPriceInput) : "";
-      if (this.salemanValue.length > 0) {
-        paramsObj.uids = this.salemanValue.join(",");
-      }
-      this.paramsStorage = paramsObj;
-      getOuterChainOrder(this.category, paramsObj)
-        .then(res => {
-          this.listTotal = res.data.total;
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              id,
-              cpName,
-              pid,
-              productName,
-              colorName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              size,
-              isRepeat,
-              address,
-              createTime,
-              remark,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator,
-              operatingTime
-            } = tableItem;
-            const orderItem = {
-              id: id,
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              color: colorName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              size: size,
-              repeatOrder: isRepeat,
-              address: address,
-              createTime: createTime,
-              remarks: remark,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator,
-              nuclearOrderInterval: operatingTime
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-        })
-        .catch(error => {
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-          console.log(error);
-        });
+      this.getList();
+      this.searchButtonLoading = false;
     },
     // 清空搜索项
     handleClearSearch() {
@@ -1500,74 +1432,11 @@ export default {
       });
       return sums;
     },
-    // 重载页面
-    reloadPage() {
-      if (JSON.stringify(this.paramsStorage) == "{}") {
-        this.getOrderList();
-      } else {
-        console.log(this.paramsStorage);
-        let searchList = [];
-        getOuterChainOrder(this.category, this.paramsStorage).then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              id,
-              cpName,
-              pid,
-              productName,
-              colorName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              size,
-              isRepeat,
-              address,
-              createTime,
-              remark,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator,
-              operatingTime
-            } = tableItem;
-            const orderItem = {
-              id: id,
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              color: colorName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              size: size,
-              repeatOrder: isRepeat,
-              address: address,
-              createTime: createTime,
-              remarks: remark,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator,
-              nuclearOrderInterval: operatingTime
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-        });
-      }
-    },
 
     /* 移动端事件 */
 
     // 分页器
     handlePageChange() {
-      console.log(this.currentPage)
       this.getList();
     },
     // 点击搜索
@@ -1870,11 +1739,12 @@ export default {
       }
       this.mobileSearchButtonLoading = true;
       let searchList = [];
-      const contains = false;
-      const rows = 1000;
-      const page = 1;
 
-      let paramsObj = { contains: contains, rows: rows, page: page };
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.pagesize,
+        page: this.currentPage
+      };
       timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
       timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
       this.channelValue ? (paramsObj.cid = this.channelValue) : "";
