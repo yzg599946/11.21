@@ -89,8 +89,7 @@
       border
       fit
       :data="list"
-      useVirtual
-      :height="tableMaxHeight"
+      :max-height="tableMaxHeight"
       style="width: 100%;"
       @cell-click="handleTimeSlot"
     >
@@ -115,6 +114,7 @@
         </template>
       </el-table-column>
     </el-table>
+
     <!-- PC端 分页器 -->
     <el-pagination
       v-if="device!='mobile'"
@@ -154,9 +154,9 @@
     </div>
     <!-- PC端 渠道详情 -->
     <el-dialog size="mini" :title="channelTitle" :visible.sync="dialogTableVisible">
-      <el-table size="mini" :data="gridData">
-        <el-table-column property="timeslot" label="时段" width="400"></el-table-column>
-        <el-table-column property="orderCount" label="订单数" width="400"></el-table-column>
+      <el-table :max-height="tableMaxHeight - 200" size="mini" :data="gridData">
+        <el-table-column property="timeslot" label="时段" width="400" align="center"></el-table-column>
+        <el-table-column property="orderCount" label="订单数" width="400" align="center"></el-table-column>
       </el-table>
     </el-dialog>
     <!-- 移动端 渠道详情 -->
@@ -362,29 +362,18 @@ export default {
       pickerOptions: {
         shortcuts: [
           {
-            text: "最近一周",
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }
@@ -406,6 +395,7 @@ export default {
       dialogTableVisible: false,
       channelTitle: "",
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [1000, 2000, 3000], //单页最大显示条数
       pagesize: 1000, //单页内条数
       listTotal: 0, //页面总数
@@ -440,15 +430,21 @@ export default {
       clearSearchButtonLoading: false,
       salemanWidth: "",
       pageJumpIndex: 1,
-      contains: false
+      contains: false,
+      tableMaxHeight: 0
     };
   },
   created() {
     this.getList();
     this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
     this.getSalesman();
     this.getChannel();
     this.getProduct();
+    this.getHeight();
+  },
+  destroyed() {
+    window.removeEventListener("resize", this.getHeight);
   },
   computed: {
     deviceVal() {
@@ -464,7 +460,6 @@ export default {
     // 获取数据
     getList() {
       let searchList = [];
-      this.searchButtonLoading = true;
       this.listLoading = true;
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
@@ -498,7 +493,9 @@ export default {
         .catch(error => {
           console.log(error);
         });
-      this.listLoading = false;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -542,6 +539,11 @@ export default {
         });
       });
     },
+    // 表格高度自适应
+    getHeight() {
+      let otherHeight = this.device == "desktop" ? 250 : 200;
+      this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
     // 业务员选择器宽度自适应
     salemanChange() {
       const inputWidth = 178; //选择器原始宽度 178px
@@ -569,9 +571,71 @@ export default {
     handleTimeSlot(row, column, cell, event) {
       this.gridData = [];
       this.channelTitle = row.channel;
-      getOuterChainTimeslotStatistics(this.category, {
+      let paramsObj = {
         cpName: this.channelTitle
-      }).then(res => {
+      };
+      if (this.device == "desktop") {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+        this.timeSelectValue[0]
+          ? (paramsObj.createTime = this.timeSelectValue[0])
+          : "";
+        this.timeSelectValue[1]
+          ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+          : "";
+        this.productValue ? (paramsObj.productId = this.productValue) : "";
+        if (this.salemanValue.length > 0) {
+          paramsObj.uids = this.salemanValue.join(",");
+        }
+      } else {
+        let timeStartValue = "";
+        let timeEndValue = "";
+        let productId = "";
+        let uids = [];
+
+        this.timePickerStartValue == "请选择"
+          ? (timeStartValue = "")
+          : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+        this.timePickerEndValue == "请选择"
+          ? (timeEndValue = "")
+          : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+        if (this.productMobileValue != "请选择") {
+          this.productOptions.forEach(productItem => {
+            if (productItem.label == this.productMobileValue) {
+              productId = productItem.value;
+            }
+          });
+        } else {
+          productId = "";
+        }
+
+        if (this.salesmanMobileValue != "请选择") {
+          let salesmanArr;
+          if (this.salesmanMobileValue.length > 1) {
+            salesmanArr = this.salesmanMobileValue.split(",");
+            salesmanArr.forEach(salesmanItem => {
+              this.salemanOptions.forEach(optionItem => {
+                if (salesmanItem == optionItem.label) {
+                  uids.push(optionItem.value);
+                }
+              });
+            });
+          } else {
+            this.salemanOptions.forEach(optionItem => {
+              if (optionItem.label == this.salesmanMobileValue) {
+                uids.push(optionItem.value);
+              }
+            });
+          }
+        }
+        timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+        timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+        productId ? paramsObj.productId : "";
+        if (uids.length > 0) {
+          paramsObj.uids = uids.join(",");
+        }
+      }
+
+      getOuterChainTimeslotStatistics(this.category, paramsObj).then(res => {
         const channelTimeDataList = res.data.rows;
         channelTimeDataList.forEach(channelTimeDataItem => {
           const { timeCount, tNum } = channelTimeDataItem;
@@ -606,6 +670,95 @@ export default {
 
     /* 移动端事件 */
 
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let timeStartValue = "";
+      let timeEndValue = "";
+      let productId = "";
+      let channelId = "";
+      let uids = [];
+
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      if (this.productMobileValue != "请选择") {
+        this.productOptions.forEach(productItem => {
+          if (productItem.label == this.productMobileValue) {
+            productId = productItem.value;
+          }
+        });
+      } else {
+        productId = "";
+      }
+
+      if (this.channelMobileValue != "请选择") {
+        this.channelOptions.forEach(channelItem => {
+          if (channelItem.label == this.channelMobileValue) {
+            channelId = channelItem.value;
+          }
+        });
+      } else {
+        channelId = "";
+      }
+
+      if (this.salesmanMobileValue != "请选择") {
+        let salesmanArr;
+        if (this.salesmanMobileValue.length > 1) {
+          salesmanArr = this.salesmanMobileValue.split(",");
+          salesmanArr.forEach(salesmanItem => {
+            this.salemanOptions.forEach(optionItem => {
+              if (salesmanItem == optionItem.label) {
+                uids.push(optionItem.value);
+              }
+            });
+          });
+        } else {
+          this.salemanOptions.forEach(optionItem => {
+            if (optionItem.label == this.salesmanMobileValue) {
+              uids.push(optionItem.value);
+            }
+          });
+        }
+      }
+      let searchList = [];
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.pagesize,
+        page: this.mobileCurrentPage
+      };
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      channelId ? (paramsObj.cid = channelId) : "";
+      productId ? paramsObj.productId : "";
+      if (uids.length > 0) {
+        paramsObj.uids = uids.join(",");
+      }
+      getOuterChainChannelStatistics(this.category, paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const { cpName, pNum } = tableItem;
+            const orderItem = { channel: cpName, orderCount: pNum };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
+    // 分页器
+    handlePageChange() {
+      this.getMobileList();
+    },
     // 点击搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {
@@ -755,96 +908,10 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      let timeStartValue = "";
-      let timeEndValue = "";
-      let productId = "";
-      let channelId = "";
-      let uids = [];
-
-      this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
-      this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
-      if (this.productMobileValue != "请选择") {
-        this.productOptions.forEach(productItem => {
-          if (productItem.label == this.productMobileValue) {
-            productId = productItem.value;
-          }
-        });
-      } else {
-        productId = "";
-      }
-
-      if (this.channelMobileValue != "请选择") {
-        this.channelOptions.forEach(channelItem => {
-          if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
-          }
-        });
-      } else {
-        channelId = "";
-      }
-
-      if (this.salesmanMobileValue != "请选择") {
-        let salesmanArr;
-        if (this.salesmanMobileValue.length > 1) {
-          salesmanArr = this.salesmanMobileValue.split(",");
-          salesmanArr.forEach(salesmanItem => {
-            this.salemanOptions.forEach(optionItem => {
-              if (salesmanItem == optionItem.label) {
-                uids.push(optionItem.value);
-              }
-            });
-          });
-        } else {
-          this.salemanOptions.forEach(optionItem => {
-            if (optionItem.label == this.salesmanMobileValue) {
-              uids.push(optionItem.value);
-            }
-          });
-        }
-      }
       this.mobileSearchButtonLoading = true;
-      let searchList = [];
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.rows,
-        page: this.page
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      channelId ? (paramsObj.cid = channelId) : "";
-      productId ? paramsObj.productId : "";
-      if (uids.length > 0) {
-        paramsObj.uids = uids.join(",");
-      }
-      getOuterChainChannelStatistics(this.category, paramsObj)
-        .then(res => {
-          const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.listLoading = false;
-            return;
-          }
-          tableData.forEach(tableItem => {
-            const { cpName, pNum } = tableItem;
-            const orderItem = { channel: cpName, orderCount: pNum };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.mobileSearchShow = false;
-          this.mobileSearchButtonLoading = false;
-        })
-        .catch(error => {
-          this.mobileSearchShow = false;
-          this.mobileSearchButtonLoading = false;
-          console.log(error);
-        });
-    },
-    // 分页器
-    handlePageChange() {
-     this.getList();
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
     },
     // 返回列表
     handleDetailCancel() {
@@ -857,16 +924,16 @@ export default {
     // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
       this.pageJumpIndex = jumpPage;
-      this.currentPage = jumpPage;
-      this.getList();
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };

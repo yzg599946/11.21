@@ -548,30 +548,19 @@ export default {
       list: [],
       pickerOptions: {
         shortcuts: [
-          {
-            text: "最近一周",
+         {
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }

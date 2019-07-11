@@ -128,97 +128,53 @@
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
     </div>
     <!-- 产品列表 -->
-    <el-table
+    <vxe-table
       size="mini"
-      v-loading="listLoading"
+      ref="orderTable"
+      :loading="listLoading"
       @cell-click="handleUseful"
-      @selection-change="handleSelectChange"
-      :summary-method="getSummaries"
-      fit
       border
-      show-summary
+      highlight-hover-row
+      show-footer
+      :footer-method="footerMethod"
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
-      style="width: 100%;"
+      :data.sync="list"
     >
-      <el-table-column :show-overflow-tooltip="true" label="渠道项目" width="120px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.channel }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :show-overflow-tooltip="true"
-        prop="productName"
-        label="产品名称"
-        width="130px"
+      <vxe-table-column field="channel" title="项目渠道" align="center" width="120" show-overflow></vxe-table-column>
+      <vxe-table-column
+        field="productName"
+        title="产品名称"
         sortable
         align="center"
-      >
-        <template slot-scope="scope">
-          <span>{{ scope.row.productName }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="名字" width="100px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="手机" width="130px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.phoneNumber }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="数量" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.count }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="总价" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.price }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="重单" width="80px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.repeatOrder }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="详细地址" width="400px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.address }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="是否可用" width="100px" align="center">
-        <template slot-scope="scope">
-          <span
-            style="cursor:pointer"
-            :class="scope.row.isUseful==1?'blue':'red'"
-          >{{ scope.row.isUseful==1?'有效单':'无效单' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="导入物流状态" width="120px" align="center">
-        <template slot-scope="scope">
-          <span
-            :class="scope.row.logisticsState==1?'blue':'red'"
-          >{{ scope.row.logisticsState==1?'导入':'未导入' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="业务员" width="90px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.salesman }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="操作员" width="90px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.operator }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :show-overflow-tooltip="true" label="核单间隔" width="120px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.nuclearOrderInterval }}</span>
-        </template>
-      </el-table-column>
-    </el-table>
+        width="90"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column field="name" title="名字" width="90" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="phoneNumber" title="手机" width="100" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="count" title="数量" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="price" title="总价" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="repeatOrder" title="重单" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="address" title="详细地址" width="260" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="createTime" title="创建时间" width="150" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="remarks" title="备注" width="100" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="isUseful" title="是否可用" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column
+        field="logisticsState"
+        title="导入物流状态"
+        width="120"
+        align="center"
+        show-overflow
+      ></vxe-table-column>
+      <vxe-table-column field="salesman" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="operator" title="操作员" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column
+        field="nuclearOrderInterval"
+        title="核单间隔"
+        width="80"
+        align="center"
+        show-overflow
+      ></vxe-table-column>
+    </vxe-table>
     <!-- PC端 分页器 -->
     <el-pagination
       v-if="device=='desktop'"
@@ -229,13 +185,13 @@
       :page-size="pagesize"
       hide-on-single-page
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -249,8 +205,8 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -458,6 +414,7 @@
 
 <script>
 import Vue from "vue";
+import XEUtils from "xe-utils";
 import { parseTime } from "@/utils";
 import {
   getAllOrderList,
@@ -498,36 +455,25 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'order-order',
+  name: "order-order",
   data() {
     return {
       list: [],
       pickerOptions: {
         shortcuts: [
           {
-            text: "最近一周",
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }
@@ -608,8 +554,10 @@ export default {
       currentEditID: 0,
       listLoading: false,
       currentPage: 1, //当前页
+      mobileCurrentPage:1,
       pagesizes: [300, 500, 1000, 5000], //单页最大显示条数
       pagesize: 300, //单页内条数
+      listTotal:0,//总数
       salemanWidth: "",
       multipleSelection: [],
       clickFlag: null, // 单击定时器
@@ -661,7 +609,7 @@ export default {
     };
   },
   created() {
-    this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -684,56 +632,83 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getAllOrderList({
+      let searchList = [];
+
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
         page: this.currentPage
-      }).then(res => {
-        const tableData = res.data.rows;
-        tableData.forEach(tableItem => {
-          const {
-            cpName,
-            pid,
-            productName,
-            username,
-            telephone,
-            totalCost,
-            pNum,
-            num,
-            price,
-            isRepeat,
-            address,
-            mode,
-            isImport,
-            name,
-            uid,
-            operator
-          } = tableItem;
-          const orderItem = {
-            channel: cpName,
-            pid: pid,
-            productName: productName,
-            name: name,
-            phoneNumber: telephone,
-            count: num,
-            price: totalCost,
-            repeatOrder: isRepeat,
-            address: address,
-            isUseful: mode,
-            logisticsState: isImport,
-            salesman: username,
-            uid: uid,
-            operator: operator
-          };
-          orderList.push(orderItem);
+      };
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.repeatOrderValue ? (paramsObj.isRepeat = this.repeatOrderValue) : "";
+      this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
+      this.nameInput ? (paramsObj.name = this.nameInput) : "";
+      this.productValue ? (paramsObj.productId = this.productValue) : "";
+      this.phoneNumberInput
+        ? (paramsObj.telephone = this.phoneNumberInput)
+        : "";
+      if (this.salemanValue.length > 0) {
+        paramsObj.uids = this.salemanValue.join(",");
+      }
+      getAllOrderList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const {
+              cpName,
+              pid,
+              productName,
+              username,
+              telephone,
+              totalCost,
+              pNum,
+              num,
+              price,
+              isRepeat,
+              address,
+              mode,
+              isImport,
+              name,
+              uid,
+              operator
+            } = tableItem;
+            const orderItem = {
+              channel: cpName,
+              pid: pid,
+              productName: productName,
+              name: name,
+              phoneNumber: telephone,
+              count: num,
+              price: totalCost,
+              repeatOrder: isRepeat,
+              address: address,
+              isUseful: mode,
+              logisticsState: isImport,
+              salesman: username,
+              uid: uid,
+              operator: operator
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      });
-      this.list = orderList;
-      this.listLoading = false;
+        setTimeout(() => {
+          this.listLoading =false;
+        }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -800,123 +775,37 @@ export default {
       this.tableMaxHeight = window.innerHeight - otherHeight;
     },
     // 单击复制
-    handleUseful(row, column, cell, event) {
+    handleUseful({ row, rowIndex, column, columnIndex }, event) {
       if (this.device == "mobile") return;
-      if (this.clickFlag) {
-        clearTimeout(this.clickFlag);
-        this.clickFlag = null;
-      }
-      this.clickFlag = setTimeout(() => {
-        let count = 0;
-        if (column.label == undefined) return;
-        if (column.label == "是否可用") {
-          this.list.forEach(item => {
-            if (item.id == row.id) {
-            } else {
-              count++;
-            }
+
+      let count = 0;
+      if (column.title == undefined) return;
+      if (column.title == "是否可用") {
+        this.list.forEach(item => {
+          if (item.id == row.id) {
+          } else {
+            count++;
+          }
+        });
+      } else {
+        let copyText = event.target.innerText;
+        if (copyText != "") {
+          var inputElement = document.getElementById("copy_content");
+          inputElement.value = copyText;
+          inputElement.select();
+          document.execCommand("Copy");
+          this.$message({
+            message: "复制成功",
+            type: "success"
           });
         } else {
-          let copyText = event.target.innerText;
-          if (copyText != "") {
-            var inputElement = document.getElementById("copy_content");
-            inputElement.value = copyText;
-            inputElement.select();
-            document.execCommand("Copy");
-            this.$message({
-              message: "复制成功",
-              type: "success"
-            });
-          } else {
-            this.$message.error("复制失败，内容可能为空");
-          }
+          this.$message.error("复制失败，内容可能为空");
         }
-      }, 300);
+      }
     },
     // 搜索
     handleSearch() {
-      this.listLoading = true;
-      this.searchButtonLoading = true;
-      let searchList = [];
-
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.pagesize,
-        page: this.currentPage
-      };
-      this.timeSelectValue[0]
-        ? (paramsObj.createTime = this.timeSelectValue[0])
-        : "";
-      this.timeSelectValue[1]
-        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
-        : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.repeatOrderValue ? (paramsObj.isRepeat = this.repeatOrderValue) : "";
-      this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
-      this.nameInput ? (paramsObj.name = this.nameInput) : "";
-      this.productValue ? (paramsObj.productId = this.productValue) : "";
-      this.phoneNumberInput
-        ? (paramsObj.telephone = this.phoneNumberInput)
-        : "";
-      if (this.salemanValue.length > 0) {
-        paramsObj.uids = this.salemanValue.join(",");
-      }
-      this.paramsStorage = paramsObj;
-      getAllOrderList(paramsObj)
-        .then(res => {
-          const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.searchButtonLoading = false;
-            this.listLoading = false;
-            return;
-          }
-          tableData.forEach(tableItem => {
-            const {
-              cpName,
-              pid,
-              productName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              isRepeat,
-              address,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator
-            } = tableItem;
-            const orderItem = {
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              repeatOrder: isRepeat,
-              address: address,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-        })
-        .catch(error => {
-          this.searchButtonLoading = false;
-          this.listLoading = false;
-          console.log(error);
-        });
+      this.getList();
     },
     // 清空搜索项
     handleClearSearch() {
@@ -934,12 +823,12 @@ export default {
     // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
-      this.getOrderList();
+      this.getList();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
-      this.getOrderList();
+      this.getList();
     },
     // 业务员选择器宽度自适应
     salemanChange() {
@@ -950,43 +839,126 @@ export default {
           ? "width:" + optionWidth + "px"
           : "width:" + inputWidth + "px";
     },
-    // 选择发生改变
-    handleSelectChange(selection) {
-      this.multipleSelection = selection;
-    },
     // 合计
-    getSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
-      let count = 0;
-      let price = 0;
-      columns.forEach((column, index) => {
-        if (index === 1) {
-          sums[index] = "合计";
-          return;
-        }
-        if (column.label == "数量") {
-          data.forEach(index => {
-            count = count + parseInt(index.count);
-          });
-          sums[index] = count || "";
-        }
-        if (column.label == "总价") {
-          data.forEach(index => {
-            price = price + parseInt(index.price);
-          });
-          sums[index] = price || "";
-        }
-      });
-      return sums;
+    footerMethod({ columns, data }) {
+      return [
+        columns.map((column, columnIndex) => {
+          if (columnIndex === 1) {
+            return "合计";
+          }
+          if (["count", "price"].includes(column.property)) {
+            return XEUtils.sum(data, column.property);
+          }
+          return "-";
+        })
+      ];
     },
-    // 重载页面
-    reloadPage() {
-      if (this.paramsStorage === {}) {
-        this.list = this.getOrderList();
+
+    /* 移动端事件 */
+
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let timeStartValue = "";
+      let timeEndValue = "";
+      let productId = "";
+      let channelId = "";
+      let uids = [];
+      let repeatOrder = "";
+      let usefulOrder = "";
+
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      if (this.productMobileValue != "请选择") {
+        this.productOptions.forEach(productItem => {
+          if (productItem.label == this.productMobileValue) {
+            productId = productItem.value;
+          }
+        });
       } else {
-        let searchList = [];
-        getAllOrderList(this.category, this.paramsStorage).then(res => {
+        productId = "";
+      }
+
+      if (this.channelMobileValue != "请选择") {
+        this.channelOptions.forEach(channelItem => {
+          if (channelItem.label == this.channelMobileValue) {
+            channelId = channelItem.value;
+          }
+        });
+      } else {
+        channelId = "";
+      }
+
+      if (this.salesmanMobileValue != "请选择") {
+        let salesmanArr;
+        if (this.salesmanMobileValue.length > 1) {
+          salesmanArr = this.salesmanMobileValue.split(",");
+          salesmanArr.forEach(salesmanItem => {
+            this.salemanOptions.forEach(optionItem => {
+              if (salesmanItem == optionItem.label) {
+                uids.push(optionItem.value);
+              }
+            });
+          });
+        } else {
+          this.salemanOptions.forEach(optionItem => {
+            if (optionItem.label == this.salesmanMobileValue) {
+              uids.push(optionItem.value);
+            }
+          });
+        }
+      }
+
+      if (this.repeatOrderMobileValue != "请选择") {
+        this.repeatOrderMobileValue == "重单"
+          ? (repeatOrder = 1)
+          : (repeatOrder = 0);
+      } else {
+        repeatOrder = "";
+      }
+
+      if (this.usefulMobileValue != "请选择") {
+        this.usefulMobileValue == "有效单"
+          ? (usefulOrder = 1)
+          : (usefulOrder = 0);
+      } else {
+        usefulOrder = "";
+      }
+      this.mobileSearchButtonLoading = true;
+      let searchList = [];
+
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.pagesize,
+        page: this.mobileCurrentPage
+      };
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
+      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
+      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
+      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
+      this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
+      productId ? paramsObj.productId : "";
+      this.phoneMobileValue
+        ? (paramsObj.telephone = this.phoneMobileValue)
+        : "";
+      this.minPriceMobileValue
+        ? (paramsObj.totalCost = this.minPriceMobileValue)
+        : "";
+      this.maxPriceMobileValue
+        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
+        : "";
+      if (uids.length > 0) {
+        paramsObj.uids = uids.join(",");
+      }
+      getAllOrderList(this.paramsStorage)
+        .then(res => {
           const tableData = res.data.rows;
           tableData.forEach(tableItem => {
             const {
@@ -1038,18 +1010,17 @@ export default {
             searchList.push(orderItem);
           });
           this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      }
-    },
-
-    /* 移动端事件 */
-
-    // 分页器
-    handlePageChange() {
-      this.listLoading = true;
       setTimeout(() => {
         this.listLoading = false;
-      }, 600);
+      }, 1000);
+    },
+    // 分页器
+    handlePageChange() {
+      this.getMobileList();
     },
     // 点击搜索
     handleSearchMobile() {
@@ -1273,166 +1244,10 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      let timeStartValue = "";
-      let timeEndValue = "";
-      let productId = "";
-      let channelId = "";
-      let uids = [];
-      let repeatOrder = "";
-      let usefulOrder = "";
-
-      this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
-      this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
-      if (this.productMobileValue != "请选择") {
-        this.productOptions.forEach(productItem => {
-          if (productItem.label == this.productMobileValue) {
-            productId = productItem.value;
-          }
-        });
-      } else {
-        productId = "";
-      }
-
-      if (this.channelMobileValue != "请选择") {
-        this.channelOptions.forEach(channelItem => {
-          if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
-          }
-        });
-      } else {
-        channelId = "";
-      }
-
-      if (this.salesmanMobileValue != "请选择") {
-        let salesmanArr;
-        if (this.salesmanMobileValue.length > 1) {
-          salesmanArr = this.salesmanMobileValue.split(",");
-          salesmanArr.forEach(salesmanItem => {
-            this.salemanOptions.forEach(optionItem => {
-              if (salesmanItem == optionItem.label) {
-                uids.push(optionItem.value);
-              }
-            });
-          });
-        } else {
-          this.salemanOptions.forEach(optionItem => {
-            if (optionItem.label == this.salesmanMobileValue) {
-              uids.push(optionItem.value);
-            }
-          });
-        }
-      }
-
-      if (this.repeatOrderMobileValue != "请选择") {
-        this.repeatOrderMobileValue == "重单"
-          ? (repeatOrder = 1)
-          : (repeatOrder = 0);
-      } else {
-        repeatOrder = "";
-      }
-
-      if (this.usefulMobileValue != "请选择") {
-        this.usefulMobileValue == "有效单"
-          ? (usefulOrder = 1)
-          : (usefulOrder = 0);
-      } else {
-        usefulOrder = "";
-      }
       this.mobileSearchButtonLoading = true;
-      let searchList = [];
-
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.pagesize,
-        page: this.currentPage
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
-      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
-      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
-      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
-      this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
-      productId ? paramsObj.productId : "";
-      this.phoneMobileValue
-        ? (paramsObj.telephone = this.phoneMobileValue)
-        : "";
-      this.minPriceMobileValue
-        ? (paramsObj.totalCost = this.minPriceMobileValue)
-        : "";
-      this.maxPriceMobileValue
-        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
-        : "";
-      if (uids.length > 0) {
-        paramsObj.uids = uids.join(",");
-      }
-      this.paramsStorage = paramsObj;
-      getAllOrderList(this.category, this.paramsStorage)
-        .then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              id,
-              cpName,
-              pid,
-              productName,
-              colorName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              size,
-              isRepeat,
-              address,
-              createTime,
-              remark,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator,
-              operatingTime
-            } = tableItem;
-            const orderItem = {
-              id: id,
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              color: colorName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              size: size,
-              repeatOrder: isRepeat,
-              address: address,
-              createTime: createTime,
-              remarks: remark,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator,
-              nuclearOrderInterval: operatingTime
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-        })
-        .catch(error => {
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-          console.log(error);
-        });
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
     },
     // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -1441,19 +1256,16 @@ export default {
     // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };

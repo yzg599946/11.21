@@ -115,9 +115,8 @@ export default {
     handleGetData() {
       //获取超时单信息
       getOrderStatus().then(res => {
-        console.log(res);
         let statusdataList = [];
-        if (res.data) {
+        if (!res.data == "手表: 有超时单") {
           const orderStatusList = res.data;
           orderStatusList.forEach(orderStatusItem => {
             let data = { category: orderStatusItem, status: "有超时单" };
@@ -125,16 +124,14 @@ export default {
           });
           this.time = true;
         } else {
-          if (res.indexOf("没有权限，请不要乱来!") > -1) {
-            this.time = false;
-          }
+          this.time = false;
         }
         this.overtimeTableData = statusdataList;
       });
       //获取订单信息
       getOrderCount().then(res => {
         let countdataList = [];
-        if (res.data) {
+        if (!res.data == "头条: 有单") {
           const orderCountList = res.data;
           orderCountList.forEach(orderCountItem => {
             let data = { category: orderCountItem, status: "有订单" };
@@ -142,9 +139,7 @@ export default {
           });
           this.count = true;
         } else {
-          if (res.indexOf("没有权限，请不要乱来!") > -1) {
-            this.count = false;
-          }
+          this.count = false;
         }
         this.orderTableData = countdataList;
       });

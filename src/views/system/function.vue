@@ -65,7 +65,6 @@
                 filterable
                 clearable
                 :props="props"
-                :change-on-select="true"
                 :show-all-levels="false"
                 @change="handleSelectMenuChange"
               ></el-cascader>
@@ -228,7 +227,7 @@ export default {
         emitPath: false,
         checkStrictly: true,
         label: "text",
-        value: "functionId"
+        value: "id"
       },
       currentId: 0,
       addForm: {
@@ -347,6 +346,7 @@ export default {
     handleAdd() {
       this.addDialogVisible = true;
       getMenuTree().then(res => {
+        console.log(res);
         this.parentMenu = res.data;
       });
     },
@@ -389,6 +389,7 @@ export default {
     },
     // 关联菜单改变
     handleSelectMenuChange(e) {
+      console.log(e)
       this.menuId = e;
     },
     // 更新

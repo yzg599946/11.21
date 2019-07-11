@@ -24,6 +24,14 @@
         icon="el-icon-delete"
         @click="handleDeleteSelect"
       >批量删除</el-button>
+      <el-button
+        v-if="childrenList"
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-back"
+        @click="handleReturn"
+      >返回</el-button>
     </div>
     <!-- 移动端 功能按钮 -->
     <div v-else class="filter-mobile">
@@ -37,14 +45,13 @@
       border
       fit
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
       @row-dblclick="handleChildrenDetail"
       @cell-click="handleUseful"
       @row-click="handleSelect"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column fixed type="selection" align="center" width="50"></el-table-column>
       <el-table-column label="id" :width="device=='desktop'?'500':'170'" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
@@ -55,6 +62,7 @@
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
+      <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
       <el-table-column
         v-if="device=='desktop'"
         label="操作"
@@ -82,13 +90,13 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -102,8 +110,8 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -153,45 +161,6 @@
         <el-button @click="handleEditCancel">取 消</el-button>
         <el-button type="primary" @click="handleEditConfirm">确 定</el-button>
       </div>
-    </el-dialog>
-    <!-- 查看子渠道 -->
-    <el-dialog
-      v-loading="childrenListLoading"
-      :title="childrenChannelTitle"
-      :visible.sync="dialogTableVisible"
-    >
-      <el-table
-        :max-height="tableMaxHeight-100"
-        size="mini"
-        border
-        fit
-        :data="childrenChannelList.slice((childrenCurrentPage-1)*childrenPagesize,childrenCurrentPage*childrenPagesize)"
-      >
-        <el-table-column property="id" label="ID" width="400"></el-table-column>
-        <el-table-column property="name" label="名称" width="400"></el-table-column>
-        <el-table-column
-          v-if="device=='desktop'"
-          label="操作"
-          :width="device=='desktop'?'500':'100'"
-          align="center"
-        >
-          <template slot-scope="scope">
-            <el-button @click="handleUpdata(scope.row)" type="text" size="small">更新</el-button>
-            <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-pagination
-        v-if="device!='mobile'"
-        @size-change="handleChildrenSizeChange"
-        @current-change="handleChildrenCurrentChange"
-        :current-page="childrenCurrentPage"
-        :page-sizes="childrenPagesizes"
-        :page-size="childrenPagesize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="childrenChannelList.length"
-        class="pagination"
-      ></el-pagination>
     </el-dialog>
     <!-- 删除渠道 -->
     <el-dialog title="提示" :visible.sync="deleteDialogVisible">
@@ -291,17 +260,17 @@ export default {
       list: [],
       nameInput: "",
       formLabelWidth: "120px",
-      dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [50, 100, 200], //单页最大显示条数
       pagesize: 50, //单页内条数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
       listLoading: false,
       channelOptions: [],
       editDialogVisible: false,
-      dialogTableVisible: false,
       UpdateDialogVisible: false,
       deleteDialogVisible: false,
       deleteSelectDialogVisible: false,
@@ -309,12 +278,6 @@ export default {
         parentChannel: "",
         channelName: ""
       },
-      childrenChannelTitle: "",
-      childrenChannelList: [],
-      childrenCurrentPage: 1, //当前页
-      childrenPagesizes: [100, 200, 500, 1000], //单页最大显示条数
-      childrenPagesize: 100, //单页内条数
-      childrenListLoading: false,
       updateForm: {
         id: "",
         name: ""
@@ -322,16 +285,17 @@ export default {
       pageJumpIndex: 1,
       nameMobileValue: "",
       tableMaxHeight: 0,
-      paramsStorage: {},
       multipleSelection: [],
       deleteId: "",
       deleteName: "",
       idsStr: "",
-      namesStr: ""
+      namesStr: "",
+      childrenList: false,
+      childrenRow: {}
     };
   },
   created() {
-    this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getChannel();
     this.getHeight();
@@ -347,29 +311,33 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getAllChannelList({
+      let orderList = [];
+      let paramsObj = {
         contains: false,
         page: this.currentPage,
         rows: this.pagesize
-      }).then(res => {
-        let tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { id, name } = tableItem;
-          const orderItem = {
-            id: id,
-            name: name
-          };
-          orderList.push(orderItem);
+      };
+      this.nameInput != "" ? (paramsObj.name = this.nameInput) : "";
+      getAllChannelList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          let tableList = res.data.rows;
+          tableList.forEach(tableItem => {
+            const { id, name } = tableItem;
+            const orderItem = { id: id, name: name };
+            orderList.push(orderItem);
+          });
+          this.list = orderList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      });
       setTimeout(() => {
-        this.list = orderList;
         this.listLoading = false;
-      }, 500);
+      }, 1000);
     },
     // 获取渠道列表
     getChannel() {
@@ -392,12 +360,20 @@ export default {
     // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
-      this.getOrderList();
+      if (this.childrenList) {
+        this.getChildrenList();
+      } else {
+        this.getList();
+      }
     },
-    //选择表格当前页数
+    // 选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
-      this.getOrderList();
+      if (this.childrenList) {
+        this.getChildrenList();
+      } else {
+        this.getList();
+      }
     },
     // 单击复制
     handleUseful(row, column, cell, event) {
@@ -442,83 +418,55 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-    // 双击查看
-    handleChildrenDetail(row, column, event) {
-      if (this.childrenList == true) return;
+    // 获取子渠道
+    getChildrenList(row) {
+      this.listLoading = true;
       let orderList = [];
-      const { id, name } = row;
-      this.childrenChannelTitle = `${name}子渠道`;
+      const { id, name } = this.childrenRow;
       getAllChannelList({
         parentId: id,
         contains: false,
-        page: this.childrenCurrentPage,
-        rows: this.childrenPagesize
+        page: this.currentPage,
+        rows: this.pagesize
       })
         .then(res => {
+          this.listTotal = res.data.total;
           let tableList = res.data.rows;
           tableList.forEach(tableitem => {
             const { id, name } = tableitem;
             const orderItem = { id: id, name: name };
             orderList.push(orderItem);
           });
+          this.list = orderList;
         })
         .catch(error => {
           console.log(error);
         });
-
-      this.childrenChannelList = orderList;
-      this.dialogTableVisible = true;
-    },
-    // 选择子渠道表格尺寸
-    handleChildrenSizeChange(val) {
-      this.childrenListLoading = true;
       setTimeout(() => {
-        this.childrenPagesize = val;
-        this.childrenListLoading = false;
-      }, 500);
+        this.listLoading = false;
+      }, 1000);
     },
-    // 选择子渠道表格当前页数
-    handleChildrenCurrentChange(val) {
-      this.childrenListLoading = true;
-      setTimeout(() => {
-        this.childrenCurrentPage = val;
-        this.childrenListLoading = false;
-      }, 500);
+    // 双击查看
+    handleChildrenDetail(row, column, event) {
+      if (this.childrenList == true) return;
+      this.currentPage = 1;
+      this.childrenRow = row;
+      this.getChildrenList();
+      this.childrenList = true;
+    },
+    // 返回
+    handleReturn() {
+      this.childrenRow = {};
+      this.childrenList = false;
+      this.getList();
     },
     // 搜索
     handleSearch() {
-      let orderList = [];
-      const name = this.nameInput;
-      if (name == "") {
-        this.$message.error("请输入渠道名称");
+      if (this.nameInput == "") {
+        this.$message.error("请输入名称");
         return;
       }
-      this.listLoading = true;
-      this.paramsStorage = {
-        name: name,
-        contains: false,
-        page: this.currentPage,
-        rows: this.pagesize
-      };
-      getAllChannelList({
-        name: name,
-        contains: false,
-        page: 1,
-        rows: 50
-      })
-        .then(res => {
-          let tableList = res.data.rows;
-          tableList.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = { id: id, name: name };
-            orderList.push(orderItem);
-          });
-        })
-        .catch(error => {
-          console.log(error);
-        });
-      this.listLoading = false;
-      this.list = orderList;
+      this.getList();
     },
     // 新增
     handleAdd() {
@@ -552,7 +500,7 @@ export default {
       addChannel({ parentId: parentChannel, name: channelName })
         .then(res => {
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               message: "新增成功",
               type: "success"
@@ -591,7 +539,7 @@ export default {
       updateChannel({ id: id, parentId: "", name: name })
         .then(res => {
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               message: "更新成功",
               type: "success"
@@ -625,7 +573,9 @@ export default {
             message: "删除成功",
             type: "success"
           }),
-            this.reloadPage();
+            this.getList();
+        } else {
+          this.$message.error(res.msg);
         }
         this.deleteDialogVisible = false;
       });
@@ -664,7 +614,9 @@ export default {
             message: "删除成功",
             type: "success"
           }),
-            this.reloadPage();
+            this.getList();
+        } else {
+          this.$message.error(res.msg);
         }
         this.deleteSelectDialogVisible = false;
       });
@@ -677,29 +629,38 @@ export default {
         this.deleteSelectDialogVisible = false;
       }
     },
-    // 重载页面
-    reloadPage() {
-      if (JSON.stringify(this.paramsStorage) == "{}") {
-        this.getOrderList();
-      } else {
-        let searchList = [];
-        getAllColorList(this.paramsStorage).then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = {
-              id: id,
-              name: name
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-        });
-      }
-    },
 
     /* 移动端事件 */
 
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let orderList = [];
+      let paramsObj = {
+        contains: false,
+        page: this.mobileCurrentPage,
+        rows: this.pagesize
+      };
+      this.nameMobileValue != "" ? (paramsObj.name = this.nameMobileValue) : "";
+      getAllChannelList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          let tableList = res.data.rows;
+          tableList.forEach(tableItem => {
+            const { id, name } = tableItem;
+            const orderItem = { id: id, name: name };
+            orderList.push(orderItem);
+          });
+
+          this.list = orderList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
     //搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {
@@ -718,41 +679,18 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      let orderList = [];
-      const name = this.nameMobileValue;
-      if (name == "") {
-        this.$message.error("请输入渠道名称");
-        this.mobileSearchShow = false;
+      if(this.nameMobileValue == ''){
+        this.$message.error('请输入名称');
         return;
       }
-      this.listLoading = true;
-      getAllChannelList({
-        name: name,
-        contains: false,
-        page: 1,
-        rows: 50
-      })
-        .then(res => {
-          let tableList = res.data.rows;
-          tableList.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = { id: id, name: name };
-            orderList.push(orderItem);
-          });
-        })
-        .catch(error => {
-          console.log(error);
-        });
-      this.listLoading = false;
+      this.mobileSearchButtonLoading = true;
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
       this.mobileSearchShow = false;
-      this.list = orderList;
     },
     // 分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+      this.getMobileList();
     },
     // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -761,19 +699,16 @@ export default {
     // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };

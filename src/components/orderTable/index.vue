@@ -195,6 +195,7 @@
       @cell-dblclick="handleEdit"
       @cell-click="handleUseful"
       @select-change="handleSelectChange"
+      @select-all="handleSelectAll"
       border
       highlight-hover-row
       show-footer
@@ -229,20 +230,18 @@
       <vxe-table-column field="address" title="详细地址" width="260" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="createTime" title="创建时间" width="150" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="remarks" title="备注" width="100" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column
-        field="isUseful"
-        title="是否可用"
-        width="80"
-        align="center"
-        show-overflow
-      ></vxe-table-column>
-      <vxe-table-column
-        field="logisticsState"
-        title="导入物流状态"
-        width="120"
-        align="center"
-        show-overflow
-      ></vxe-table-column>
+      <vxe-table-column title="是否可用" width="80" align="center" show-overflow>
+        <template v-slot="{row}">
+          <span v-if="row.isUseful == 0">可用</span>
+          <span v-else style="color:red">不可用</span>
+        </template>
+      </vxe-table-column>
+      <vxe-table-column title="导入物流状态" width="120" align="center" show-overflow>
+        <template v-slot="{row}">
+          <span v-if="row.logisticsState == 0">已导入</span>
+          <span v-else style="color:red">未导入</span>
+        </template>
+      </vxe-table-column>
       <vxe-table-column field="salesman" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="operator" title="操作员" width="80" align="center" show-overflow></vxe-table-column>
       <vxe-table-column
@@ -283,7 +282,7 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
+        v-model="mobileCurrentPage"
         :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
@@ -760,6 +759,7 @@ export default {
       downloadLoading: false,
       listLoading: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [300, 500, 1000, 5000], //单页最大显示条数
       pagesize: 300, //单页内条数
       listTotal: 0, // 页面总数
@@ -810,10 +810,8 @@ export default {
       pageJumpIndex: 1,
       searchButtonLoading: false,
       clearSearchButtonLoading: false,
-      paramsStorage: {},
       contains: false,
-      jdSelect: [],
-      currentPagesize: 1
+      jdSelect: []
     };
   },
   created() {
@@ -833,8 +831,8 @@ export default {
     deviceVal() {
       return this.$store.state.app.device;
     },
-    mode(val){
-      return val == 0 ? '不可用' : '可用'
+    mode(val) {
+      return val == 0 ? "不可用" : "可用";
     }
   },
   watch: {
@@ -1018,7 +1016,7 @@ export default {
           }
           this.list.forEach(item => {
             if (item.id == row.id) {
-              this.handleEditUseful({
+              this.handleChangeUseful({
                 id: row.id,
                 mode: this.list[count].isUseful
               });
@@ -1053,7 +1051,7 @@ export default {
         mode: modeInt
       })
         .then(res => {
-          this.reloadPage();
+          this.getList();
           setTimeout(() => {
             this.$message({
               message: "修改成功",
@@ -1121,7 +1119,7 @@ export default {
           };
           editOuterChainOrder(this.category, params)
             .then(res => {
-              this.reloadPage();
+              this.getList();
               setTimeout(() => {
                 this.$message({
                   message: "修改成功",
@@ -1247,6 +1245,10 @@ export default {
     handleSelectChange({ selection, checked, row, column }, event) {
       this.multipleSelection = selection;
     },
+    // 全选
+    handleSelectAll({ selection, checked }, event) {
+      this.multipleSelection = selection;
+    },
     // 导出德邦
     handleExportDB() {
       this.downloadLoading = true;
@@ -1315,31 +1317,6 @@ export default {
       this.importTypeDialogVisible = false;
     },
     // 合计
-    // getSummaries(param) {
-    //   const { columns, data } = param;
-    //   const sums = [];
-    //   let count = 0;
-    //   let price = 0;
-    //   columns.forEach((column, index) => {
-    //     if (index === 1) {
-    //       sums[index] = "合计";
-    //       return;
-    //     }
-    //     if (column.label == "数量") {
-    //       data.forEach(index => {
-    //         count = count + parseInt(index.count);
-    //       });
-    //       sums[index] = count || "";
-    //     }
-    //     if (column.label == "总价") {
-    //       data.forEach(index => {
-    //         price = price + parseInt(index.price);
-    //       });
-    //       sums[index] = price || "";
-    //     }
-    //   });
-    //   return sums;
-    // },
     footerMethod({ columns, data }) {
       return [
         columns.map((column, columnIndex) => {
@@ -1356,9 +1333,171 @@ export default {
 
     /* 移动端事件 */
 
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let timeStartValue = "";
+      let timeEndValue = "";
+      let productId = "";
+      let channelId = "";
+      let uids = [];
+      let repeatOrder = "";
+      let usefulOrder = "";
+
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      if (this.productMobileValue != "请选择") {
+        this.productOptions.forEach(productItem => {
+          if (productItem.label == this.productMobileValue) {
+            productId = productItem.value;
+          }
+        });
+      } else {
+        productId = "";
+      }
+
+      if (this.channelMobileValue != "请选择") {
+        this.channelOptions.forEach(channelItem => {
+          if (channelItem.label == this.channelMobileValue) {
+            channelId = channelItem.value;
+          }
+        });
+      } else {
+        channelId = "";
+      }
+
+      if (this.salesmanMobileValue != "请选择") {
+        let salesmanArr;
+        if (this.salesmanMobileValue.length > 1) {
+          salesmanArr = this.salesmanMobileValue.split(",");
+          salesmanArr.forEach(salesmanItem => {
+            this.salemanOptions.forEach(optionItem => {
+              if (salesmanItem == optionItem.label) {
+                uids.push(optionItem.value);
+              }
+            });
+          });
+        } else {
+          this.salemanOptions.forEach(optionItem => {
+            if (optionItem.label == this.salesmanMobileValue) {
+              uids.push(optionItem.value);
+            }
+          });
+        }
+      }
+
+      if (this.repeatOrderMobileValue != "请选择") {
+        this.repeatOrderMobileValue == "重单"
+          ? (repeatOrder = 1)
+          : (repeatOrder = 0);
+      } else {
+        repeatOrder = "";
+      }
+
+      if (this.usefulMobileValue != "请选择") {
+        this.usefulMobileValue == "有效单"
+          ? (usefulOrder = 1)
+          : (usefulOrder = 0);
+      } else {
+        usefulOrder = "";
+      }
+      let searchList = [];
+
+      let paramsObj = {
+        contains: this.contains,
+        rows: this.pagesize,
+        page: this.mobileCurrentPage
+      };
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
+      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
+      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
+      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
+      this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
+      productId ? paramsObj.productId : "";
+      this.phoneMobileValue
+        ? (paramsObj.telephone = this.phoneMobileValue)
+        : "";
+      this.minPriceMobileValue
+        ? (paramsObj.totalCost = this.minPriceMobileValue)
+        : "";
+      this.maxPriceMobileValue
+        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
+        : "";
+      if (uids.length > 0) {
+        paramsObj.uids = uids.join(",");
+      }
+      getOuterChainOrder(this.category, paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const {
+              id,
+              cpName,
+              pid,
+              productName,
+              colorName,
+              username,
+              telephone,
+              totalCost,
+              pNum,
+              num,
+              price,
+              size,
+              isRepeat,
+              address,
+              createTime,
+              remark,
+              mode,
+              isImport,
+              name,
+              uid,
+              operator,
+              operatingTime
+            } = tableItem;
+            const orderItem = {
+              id: id,
+              channel: cpName,
+              pid: pid,
+              productName: productName,
+              color: colorName,
+              name: name,
+              phoneNumber: telephone,
+              count: num,
+              price: totalCost,
+              size: size,
+              repeatOrder: isRepeat,
+              address: address,
+              createTime: createTime,
+              remarks: remark,
+              isUseful: mode,
+              logisticsState: isImport,
+              salesman: username,
+              uid: uid,
+              operator: operator,
+              nuclearOrderInterval: operatingTime
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
     // 分页器
     handlePageChange() {
-      this.getList();
+      this.getMobileList();
     },
     // 点击搜索
     handleSearchMobile() {
@@ -1589,172 +1728,10 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      let timeStartValue = "";
-      let timeEndValue = "";
-      let productId = "";
-      let channelId = "";
-      let uids = [];
-      let repeatOrder = "";
-      let usefulOrder = "";
-
-      this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
-      this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
-      if (this.productMobileValue != "请选择") {
-        this.productOptions.forEach(productItem => {
-          if (productItem.label == this.productMobileValue) {
-            productId = productItem.value;
-          }
-        });
-      } else {
-        productId = "";
-      }
-
-      if (this.channelMobileValue != "请选择") {
-        this.channelOptions.forEach(channelItem => {
-          if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
-          }
-        });
-      } else {
-        channelId = "";
-      }
-
-      if (this.salesmanMobileValue != "请选择") {
-        let salesmanArr;
-        if (this.salesmanMobileValue.length > 1) {
-          salesmanArr = this.salesmanMobileValue.split(",");
-          salesmanArr.forEach(salesmanItem => {
-            this.salemanOptions.forEach(optionItem => {
-              if (salesmanItem == optionItem.label) {
-                uids.push(optionItem.value);
-              }
-            });
-          });
-        } else {
-          this.salemanOptions.forEach(optionItem => {
-            if (optionItem.label == this.salesmanMobileValue) {
-              uids.push(optionItem.value);
-            }
-          });
-        }
-      }
-
-      if (this.repeatOrderMobileValue != "请选择") {
-        this.repeatOrderMobileValue == "重单"
-          ? (repeatOrder = 1)
-          : (repeatOrder = 0);
-      } else {
-        repeatOrder = "";
-      }
-
-      if (this.usefulMobileValue != "请选择") {
-        this.usefulMobileValue == "有效单"
-          ? (usefulOrder = 1)
-          : (usefulOrder = 0);
-      } else {
-        usefulOrder = "";
-      }
       this.mobileSearchButtonLoading = true;
-      let searchList = [];
-
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.pagesize,
-        page: this.currentPage
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
-      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
-      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
-      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
-      this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
-      productId ? paramsObj.productId : "";
-      this.phoneMobileValue
-        ? (paramsObj.telephone = this.phoneMobileValue)
-        : "";
-      this.minPriceMobileValue
-        ? (paramsObj.totalCost = this.minPriceMobileValue)
-        : "";
-      this.maxPriceMobileValue
-        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
-        : "";
-      if (uids.length > 0) {
-        paramsObj.uids = uids.join(",");
-      }
-      this.paramsStorage = paramsObj;
-      getOuterChainOrder(this.category, paramsObj)
-        .then(res => {
-          this.listTotal = res.data.total;
-          const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.mobileSearchButtonLoading = false;
-            this.mobileSearchShow = false;
-            return;
-          }
-          tableData.forEach(tableItem => {
-            const {
-              id,
-              cpName,
-              pid,
-              productName,
-              colorName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              size,
-              isRepeat,
-              address,
-              createTime,
-              remark,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator,
-              operatingTime
-            } = tableItem;
-            const orderItem = {
-              id: id,
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              color: colorName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              size: size,
-              repeatOrder: isRepeat,
-              address: address,
-              createTime: createTime,
-              remarks: remark,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator,
-              nuclearOrderInterval: operatingTime
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-        })
-        .catch(error => {
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-          console.log(error);
-        });
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
     },
     // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -1763,18 +1740,17 @@ export default {
     // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
       setTimeout(() => {
         this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
+        this.mobileCurrentPage = jumpPage;
+        this.getMobileList();
       }, 1000);
     }
   }

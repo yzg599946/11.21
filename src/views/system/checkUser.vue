@@ -18,6 +18,7 @@
         class="filter-item"
         type="primary"
         icon="el-icon-search"
+        :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
     </div>
@@ -57,14 +58,28 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
+      <div class="mobile-pagejump">
+        <span class="pagejump-count">共{{listTotal}}条</span>
+        <van-field
+          v-model="pageJumpIndex"
+          label-width="50"
+          center
+          label="跳转至"
+          @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
+        >
+          <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
+        </van-field>
+      </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -159,7 +174,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'system-checkUser',
+  name: "system-checkUser",
   directives: { permission },
   data() {
     return {
@@ -167,29 +182,18 @@ export default {
       pickerOptions: {
         shortcuts: [
           {
-            text: "最近一周",
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }
@@ -198,8 +202,10 @@ export default {
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
       pagesize: 20, //单页内条数
+      listTotal: 0,
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
@@ -214,11 +220,13 @@ export default {
       maxDate: new Date(),
       currentDate: new Date(),
       minDateEnd: new Date(),
-      maxDateStart: new Date()
+      maxDateStart: new Date(),
+      searchButtonLoading: false,
+      pageJumpIndex: 1
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
   },
@@ -233,52 +241,15 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
-      getCheckLoginList({ contains: false, page: 1, rows: 500 }).then(res => {
-        const tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { username, status, checkName, createTime } = tableItem;
-          const searchItem = {
-            username: username,
-            loginStatus: status,
-            Confirmor: checkName,
-            applicationTime: createTime
-          };
-          orderList.push(searchItem);
-        });
-      });
-      return orderList;
-    },
-    //表格高度自适应
-    getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
-    },
-    handleSizeChange(val) {
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    //选择表格当前页数
-    handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    //搜索
-    handleSearch() {
       let searchList = [];
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
         contains: false,
-        rows: 500,
-        page: 1
+        rows: this.pagesize,
+        page: this.currentPage
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -287,6 +258,7 @@ export default {
         ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
         : "";
       getCheckLoginList(paramsObj).then(res => {
+        this.listTotal = res.data.total;
         const tableList = res.data.rows;
         tableList.forEach(tableItem => {
           const { username, status, checkName, createTime } = tableItem;
@@ -300,8 +272,72 @@ export default {
         });
         this.list = searchList;
       });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
+    //表格高度自适应
+    getHeight() {
+      let otherHeight = this.device == "desktop" ? 250 : 200;
+      this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
+    handleSizeChange(val) {
+      this.pagesize = val;
+      this.getList();
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.getList();
+    },
+    //搜索
+    handleSearch() {
+      this.searchButtonLoading = true;
+      this.getList();
+      this.searchButtonLoading = false;
+    },
+
     /* 移动端事件 */
+
+    //获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let searchList = [];
+      let paramsObj = {
+        contains: false,
+        rows: this.pagesize,
+        page: this.currentPage
+      };
+      let timeStartValue = "";
+      let timeEndValue = "";
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+
+      getCheckLoginList(paramsObj).then(res => {
+        this.listTotal = res.data.total;
+        const tableList = res.data.rows;
+        tableList.forEach(tableItem => {
+          const { username, status, checkName, createTime } = tableItem;
+          const searchItem = {
+            username: username,
+            loginStatus: status,
+            Confirmor: checkName,
+            applicationTime: createTime
+          };
+          searchList.push(searchItem);
+        });
+        this.list = searchList;
+      });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
     //搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {
@@ -358,47 +394,36 @@ export default {
     },
     //确认搜索
     handleMobileSearch() {
-      let searchList = [];
-      let timeStartValue = "";
-      let timeEndValue = "";
-      this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
-      this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
-      let paramsObj = {
-        contains: false,
-        rows: 500,
-        page: 1
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      
-      getCheckLoginList(paramsObj).then(res => {
-        const tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { username, status, checkName, createTime } = tableItem;
-          const searchItem = {
-            username: username,
-            loginStatus: status,
-            Confirmor: checkName,
-            applicationTime: createTime
-          };
-          searchList.push(searchItem);
-        });
-        this.list = searchList;
-        this.mobileSearchShow = false;
-      });
-
+      this.getMobileList();
+      this.mobileSearchShow = false;
     },
     //清空所选
     handleSearchMobileClearAll() {},
     //分页器改变
-    handlePageChange() {},
+    handlePageChange() {
+      this.getMobileList();
+    },
     //返回列表
     handleDetailCancel() {
       this.mobileDetailShow = !this.mobileDetailShow;
+    },
+    // 限制页面跳转输入框只能输入数字
+    jumpPageInput() {
+      this.pageJumpIndex = this.pageJumpIndex.replace(/[^\d]/g, "");
+    },
+    // 跳转指定页面
+    handleJumpPage() {
+      let jumpPage = parseInt(this.pageJumpIndex);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
+      }
+      if (jumpPage < 1) {
+        jumpPage = 1;
+      }
+        this.pageJumpIndex = jumpPage;
+        this.mobileCurrentPage = jumpPage;
+        this.getMobileList();
     }
   }
 };
@@ -449,5 +474,19 @@ export default {
   padding: 10px;
   width: 100%;
   box-shadow: 0 0 10px #e5e5e5;
+}
+.mobile-pagejump {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ebedf0;
+}
+
+.mobile-pagejump .pagejump-count {
+  font-size: 14px;
+  color: #323233;
+  padding-left: 10px;
+  width: 35%;
 }
 </style>

@@ -59,7 +59,7 @@
       fit
       border
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;user-select:none;"
     >
       <el-table-column :show-overflow-tooltip="true" label="ID" prop="id" align="center" width="80">
@@ -143,38 +143,34 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
           center
           label="跳转至"
           @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
         >
           <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
         @change="handlePageChange"
       />
     </div>
-    <input
-      id="copy_content"
-      type="text"
-      value
-      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
-    />
     <!-- 移动端 搜索界面 -->
     <div v-if="device=='mobile'" class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -216,6 +212,12 @@
               input-align="right"
               is-link
             />
+            <van-cell
+              @click="handleChooseMiniProgramMobile"
+              title="小程序"
+              is-link
+              :value="miniProgramMobileValue"
+            />
           </van-cell-group>
           <div class="mobile-search">
             <van-button
@@ -238,6 +240,15 @@
           @change="datetimePickerChange"
           @confirm="datetimePickerConfirm"
           @cancel="datetimePickerCancel"
+        />
+      </van-popup>
+      <!--小程序选择弹窗-->
+      <van-popup v-model="mobileMiniProgramPickerShow" position="bottom">
+        <van-picker
+          show-toolbar
+          :columns="MiniProgramColumns"
+          @cancel="mobileMiniProgramPickerShow = false"
+          @confirm="MiniProgramPickerConfirm"
         />
       </van-popup>
     </div>
@@ -280,36 +291,25 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'weChatMini-user',
+  name: "weChatMini-user",
   data() {
     return {
       list: [],
       pickerOptions: {
         shortcuts: [
           {
-            text: "最近一周",
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
           }
@@ -329,6 +329,7 @@ export default {
           label: "一贝聚站"
         }
       ],
+      MiniProgramColumns: ["劳斯宾", "掌上淘货", "一贝聚站"],
       filterOptions: [
         {
           value: "1",
@@ -336,18 +337,21 @@ export default {
         }
       ],
       timeSelectValue: "",
-      miniprogramValue: "",
       filterValue: "1",
       nameInput: "",
       phoneNumberInput: "",
+      miniprogramValue: "",
       listLoading: false,
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20, //单页内条数
+      mobileCurrentPage: 1,
+      pagesizes: [100, 500, 2000], //单页最大显示条数
+      pagesize: 100, //单页内条数
+      listTotal: 0, //总数
       multipleSelection: [],
       clickFlag: null, // 单击定时器
       mobileSearchShow: false,
       mobileDatePickerShow: false,
+      mobileMiniProgramPickerShow: false,
       minDate: new Date(1950, 10, 1),
       maxDate: new Date(),
       currentDate: new Date(),
@@ -355,6 +359,7 @@ export default {
       maxDateStart: new Date(),
       timePickerStartValue: "请选择",
       timePickerEndValue: "请选择",
+      miniProgramMobileValue: "请选择",
       nameMobileValue: "",
       phoneMobileValue: "",
       device: "",
@@ -366,7 +371,7 @@ export default {
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -385,46 +390,70 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getWechatUserList({ page: 1, rows: 300 }).then(res => {
-        const tableData = res.data.rows;
-        tableData.forEach(tableItem => {
-          const {
-            id,
-            nickName,
-            phone,
-            formId,
-            avatarUrl,
-            gender,
-            country,
-            province,
-            city,
-            language,
-            createTime,
-            overTime
-          } = tableItem;
-          const orderItem = {
-            id: id,
-            name: nickName,
-            phoneNumber: phone,
-            formId: formId,
-            avatarUrl: avatarUrl,
-            gender: gender,
-            country: country,
-            province: province,
-            city: city,
-            language: language,
-            createTime: createTime,
-            maturityTime: overTime
-          };
-          orderList.push(orderItem);
+      let searchList = [];
+      let paramsObj = {
+        rows: this.pagesize,
+        page: this.currentPage
+      };
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      this.nameInput ? (paramsObj.name = this.nameInput) : "";
+      this.phoneNumberInput
+        ? (paramsObj.telephone = this.phoneNumberInput)
+        : "";
+      this.miniprogramValue ? (paramsObj.state = this.miniprogramValue) : "";
+      this.filterValue ? (paramsObj.isRepeat = this.filterValue) : "";
+      getWechatUserList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const {
+              id,
+              nickName,
+              phone,
+              formId,
+              avatarUrl,
+              gender,
+              country,
+              province,
+              city,
+              language,
+              createTime,
+              overTime
+            } = tableItem;
+            const orderItem = {
+              id: id,
+              name: nickName,
+              phoneNumber: phone,
+              formId: formId,
+              avatarUrl: avatarUrl,
+              gender: gender,
+              country: country,
+              province: province,
+              city: city,
+              language: language,
+              createTime: createTime,
+              maturityTime: overTime
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      });
-      this.listLoading = false;
-      return orderList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     //表格高度自适应
     getHeight() {
@@ -467,30 +496,68 @@ export default {
     },
     //搜索
     handleSearch() {
-      this.listLoading = true;
       this.searchButtonLoading = true;
-      let searchList = [];
+      this.getList();
+      this.searchButtonLoading = false;
+    },
+    //选择表格尺寸
+    handleSizeChange(val) {
+      this.pagesize = val;
+      this.getList();
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.getList();
+    },
+    //选择发生改变
+    handleSelectChange(selection) {
+      this.multipleSelection = selection;
+    },
+    // 发送消息
+    handleSendMessage(rows) {
+      const id = rows.id;
+      sendWechatMessage({ id: id }).then(res => {
+        console.log(res);
+      });
+    },
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+    /* 移动端事件 */
+
+    //获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let searchList = [];
+      let miniProgramMobile = "";
+      let timeStartValue = "";
+      let timeEndValue = "";
       let paramsObj = {
-        rows: 300,
-        page: 1
+        rows: this.pagesize,
+        page: this.mobileCurrentPage
       };
-      this.timeSelectValue[0]
-        ? (paramsObj.createTime = this.timeSelectValue[0])
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      this.miniprogramOptions.forEach(item => {
+        if (item.label == this.miniProgramMobileValue) {
+          miniProgramMobile = item.value;
+        }
+      });
+      timeStartValue !="" ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue !="" ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      miniProgramMobile != "" ? (paramsObj.state = miniProgramMobile) : "";
+      this.nameMobileValue != "" ? (paramsObj.name = this.nameMobileValue) : "";
+      this.phoneMobileValue != ""
+        ? (paramsObj.telephone = this.phoneMobileValue)
         : "";
-      this.timeSelectValue[1]
-        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
-        : "";
-      this.nameInput ? (paramsObj.name = this.nameInput) : "";
-      this.phoneNumberInput
-        ? (paramsObj.telephone = this.phoneNumberInput)
-        : "";
-      this.miniprogramValue ? (paramsObj.state = this.miniprogramValue) : "";
-      this.filterValue ? (paramsObj.isRepeat = this.filterValue) : "";
-      this.paramsStorage = paramsObj;
+      paramsObj.isRepeat = this.filterValue;
+
       getWechatUserList(paramsObj)
         .then(res => {
+          this.listTotal = res.data.total;
           const tableData = res.data.rows;
           tableData.forEach(tableItem => {
             const {
@@ -524,51 +591,17 @@ export default {
             searchList.push(orderItem);
           });
           this.list = searchList;
-          this.searchButtonLoading = false;
-          this.listLoading = false;
         })
         .catch(error => {
-          this.searchButtonLoading = false;
-          this.listLoading = false;
           console.log(error);
         });
-    },
-    //选择表格尺寸
-    handleSizeChange(val) {
-      this.listLoading = true;
       setTimeout(() => {
-        this.pagesize = val;
         this.listLoading = false;
-      }, 500);
+      }, 1000);
     },
-    //选择表格当前页数
-    handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    //选择发生改变
-    handleSelectChange(selection) {
-      this.multipleSelection = selection;
-    },
-    // 发送消息
-    handleSendMessage(rows) {
-      const id = rows.id;
-      sendWechatMessage({ id: id }).then(res => {
-        console.log(res);
-      });
-    },
-
-    /* 移动端事件 */
-
     //分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+      this.getMobileList();
     },
     //点击搜索
     handleSearchMobile() {
@@ -590,29 +623,7 @@ export default {
         this.timePickerEndValue == "请选择"
           ? ""
           : (this.timePickerEndValue = "请选择"),
-        this.salesmanMobileValue == "请选择"
-          ? ""
-          : (this.salesmanMobileValue = "请选择"),
-        this.channelMobileValue == "请选择"
-          ? ""
-          : (this.channelMobileValue = "请选择"),
-        this.productMobileValue == "请选择"
-          ? ""
-          : (this.productMobileValue = "请选择"),
-        this.usefulMobileValue == "请选择"
-          ? ""
-          : (this.usefulMobileValue = "请选择"),
-        this.repeatOrderMobileValue == "请选择"
-          ? ""
-          : (this.repeatOrderMobileValue = "请选择"),
-        this.repeatNamePhoneMobileValue == "请选择"
-          ? ""
-          : (this.repeatNamePhoneMobileValue = "请选择"),
-        this.exportJDMobileValue == "请选择"
-          ? ""
-          : (this.exportJDMobileValue = "请选择"),
         this.nameMobileValue == "" ? "" : (this.nameMobileValue = ""),
-        this.colorMobileValue == "" ? "" : (this.colorMobileValue = ""),
         this.phoneMobileValue == "" ? "" : (this.phoneMobileValue = "");
     },
     //选择开始日期
@@ -641,6 +652,19 @@ export default {
         this.mobileDatePickerShow = !this.mobileDatePickerShow;
       }
     },
+    //选择小程序
+    handleChooseMiniProgramMobile() {
+      if (!this.mobileChannelPickerShow) {
+        this.mobileMiniProgramPickerShow = true;
+      }
+    },
+    //确认选择小程序
+    MiniProgramPickerConfirm(res) {
+      if (this.mobileMiniProgramPickerShow) {
+        this.miniProgramMobileValue = res;
+        this.mobileMiniProgramPickerShow = false;
+      }
+    },
     datetimePickerChange(e) {},
     //确认选择日期
     datetimePickerConfirm(res) {
@@ -660,14 +684,9 @@ export default {
     //开始搜索
     handleMobileSearch() {
       this.mobileSearchButtonLoading = true;
-      setTimeout(() => {
-        this.mobileSearchButtonLoading = false;
-        this.mobileSearchShow = false;
-      }, 2000);
-      console.log("开始时间:" + this.timePickerStartValue);
-      console.log("结束时间:" + this.timePickerEndValue);
-      console.log("姓名:" + this.nameMobileValue);
-      console.log("电话:" + this.phoneMobileValue);
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
     },
     //限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -676,19 +695,16 @@ export default {
     //跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };

@@ -108,13 +108,13 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -128,8 +128,8 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -313,35 +313,22 @@ export default {
     return {
       list: [],
       pickerOptions: {
-        shortcuts: [
-          {
-            text: "最近一周",
+        shortcuts: [{
+            text: "上月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
               picker.$emit("pick", [start, end]);
             }
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            }
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-              picker.$emit("pick", [start, end]);
-            }
-          }
-        ]
+          }]
       },
       channelOptions: [],
       channelColumns: [],
@@ -355,8 +342,10 @@ export default {
       productValue: "",
       formLabelWidth: "120px",
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20, //单页内条数
+      mobileCurrentPage: 1,
+      pagesizes: [1000, 2000, 3000], //单页最大显示条数
+      pagesize: 1000, //单页内条数
+      listTotal: 0,
       listLoading: false,
       device: "",
       mobileSearchShow: false,
@@ -386,18 +375,19 @@ export default {
       clearSearchButtonLoading: false,
       salemanWidth: "",
       pageJumpIndex: 1,
-      contains: false,
-      rows: 1000,
-      page: 1,
-      paramsStorage: {}
+      contains: false
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
     this.getSalesman();
     this.getChannel();
     this.getProduct();
+  },
+  destroyed() {
+    window.removeEventListener("resize", this.getHeight);
   },
   computed: {
     deviceVal() {
@@ -410,32 +400,45 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getOuterChainTimeslotStatistics(this.category, {
+      let searchList = [];
+      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      let paramsObj = {
         contains: this.contains,
         rows: this.rows,
         page: this.page
-      })
+      };
+      this.timeSelectValue[0]
+        ? (paramsObj.createTime = this.timeSelectValue[0])
+        : "";
+      this.timeSelectValue[1]
+        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+        : "";
+      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+      this.productValue ? (paramsObj.productId = this.productValue) : "";
+      this.cpName ? (paramsObj.cpName = this.cpName) : "";
+      if (this.salemanValue.length > 0) {
+        paramsObj.uids = this.salemanValue.join(",");
+      }
+      getOuterChainTimeslotStatistics(this.category, paramsObj)
         .then(res => {
-          const dataList = res.data.rows;
-          if (dataList.length === 0) {
-            this.listLoading = false;
-            return;
-          }
-          dataList.forEach(dataItem => {
-            const { timeCount, tNum } = dataItem;
-            const listItem = { timeslot: timeCount, orderCount: tNum };
-            orderList.push(listItem);
+          this.listTotal = res.data.total;
+          const tableData = res.data.rows;
+          tableData.forEach(tableItem => {
+            const { timeCount, tNum } = tableItem;
+            const orderItem = { timeslot: timeCount, orderCount: tNum };
+            searchList.push(orderItem);
           });
+          this.list = searchList;
         })
         .catch(error => {
           console.log(error);
         });
-      this.listLoading = false;
-      return orderList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -479,6 +482,11 @@ export default {
         });
       });
     },
+    // 表格高度自适应
+    getHeight() {
+      let otherHeight = this.device == "desktop" ? 250 : 200;
+      this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
     //业务员选择器宽度自适应
     salemanChange() {
       const inputWidth = 178; //选择器原始宽度 178px
@@ -498,34 +506,100 @@ export default {
     },
     // 搜索
     handleSearch() {
-      let searchList = [];
       this.searchButtonLoading = true;
-      this.listLoading = true;
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      this.getList();
+      this.searchButtonLoading = false;
+    },
+    //选择表格尺寸
+    handleSizeChange(val) {
+      this.pagesize = val;
+      this.getList();
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.getList();
+    },
+
+    /* 移动端事件 */
+
+    //获取数据
+    getMobileList() {
+      let timeStartValue = "";
+      let timeEndValue = "";
+      let productId = "";
+      let channelId = "";
+      let uids = [];
+
+      this.timePickerStartValue == "请选择"
+        ? (timeStartValue = "")
+        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+      this.timePickerEndValue == "请选择"
+        ? (timeEndValue = "")
+        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+      if (this.productMobileValue != "请选择") {
+        this.productOptions.forEach(productItem => {
+          if (productItem.label == this.productMobileValue) {
+            productId = productItem.value;
+          }
+        });
+      } else {
+        productId = "";
+      }
+
+      if (this.channelMobileValue != "请选择") {
+        this.channelOptions.forEach(channelItem => {
+          if (channelItem.label == this.channelMobileValue) {
+            channelId = channelItem.value;
+          }
+        });
+      } else {
+        channelId = "";
+      }
+
+      if (this.salesmanMobileValue != "请选择") {
+        let salesmanArr;
+        if (this.salesmanMobileValue.length > 1) {
+          salesmanArr = this.salesmanMobileValue.split(",");
+          salesmanArr.forEach(salesmanItem => {
+            this.salemanOptions.forEach(optionItem => {
+              if (salesmanItem == optionItem.label) {
+                uids.push(optionItem.value);
+              }
+            });
+          });
+        } else {
+          this.salemanOptions.forEach(optionItem => {
+            if (optionItem.label == this.salesmanMobileValue) {
+              uids.push(optionItem.value);
+            }
+          });
+        }
+      }
+
+      let searchList = [];
+      this.mobileSearchButtonLoading = true;
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.mobileCurrentPage
       };
-      this.timeSelectValue[0]
-        ? (paramsObj.createTime = this.timeSelectValue[0])
-        : "";
-      this.timeSelectValue[1]
-        ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
-        : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.productValue ? (paramsObj.productId = this.productValue) : "";
-      this.cpName ? (paramsObj.cpName = this.cpName) : "";
-      if (this.salemanValue.length > 0) {
-        paramsObj.uids = this.salemanValue.join(",");
+      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      channelId ? (paramsObj.cid = channelId) : "";
+      productId ? paramsObj.productId : "";
+      if (uids.length > 0) {
+        let uidStr = uids.join(",");
+        paramsObj.uids = uidStr;
       }
       this.paramsStorage = paramsObj;
       getOuterChainTimeslotStatistics(this.category, paramsObj)
         .then(res => {
+          this.listTotal = res.data.total;
           const tableData = res.data.rows;
           if (tableData.length === 0) {
-            this.searchButtonLoading = false;
-            this.listLoading = false;
+            this.mobileSearchButtonLoading = false;
+            this.mobileSearchShow = false;
             return;
           }
           tableData.forEach(tableItem => {
@@ -533,42 +607,21 @@ export default {
             const orderItem = { timeslot: timeCount, orderCount: tNum };
             searchList.push(orderItem);
           });
-          this.searchButtonLoading = false;
-          this.listLoading = false;
           this.list = searchList;
         })
         .catch(error => {
-          this.searchButtonLoading = false;
-          this.listLoading = false;
           console.log(error);
         });
     },
-    //选择表格尺寸
-    handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    //选择表格当前页数
-    handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    /* 移动端事件 */
     //点击搜索
     handleSearchMobile() {
-      if(!this.mobileSearchShow){
+      if (!this.mobileSearchShow) {
         this.mobileSearchShow = true;
       }
     },
     //取消搜索
     handleSearchMobileCancel() {
-        if(this.mobileSearchShow){
+      if (this.mobileSearchShow) {
         this.mobileSearchShow = false;
       }
     },
@@ -709,103 +762,14 @@ export default {
     },
     //开始搜索
     handleMobileSearch() {
-      let timeStartValue = "";
-      let timeEndValue = "";
-      let productId = "";
-      let channelId = "";
-      let uids = [];
-
-      this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
-      this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
-      if (this.productMobileValue != "请选择") {
-        this.productOptions.forEach(productItem => {
-          if (productItem.label == this.productMobileValue) {
-            productId = productItem.value;
-          }
-        });
-      } else {
-        productId = "";
-      }
-
-      if (this.channelMobileValue != "请选择") {
-        this.channelOptions.forEach(channelItem => {
-          if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
-          }
-        });
-      } else {
-        channelId = "";
-      }
-
-      if (this.salesmanMobileValue != "请选择") {
-        let salesmanArr;
-        if (this.salesmanMobileValue.length > 1) {
-          salesmanArr = this.salesmanMobileValue.split(",");
-          salesmanArr.forEach(salesmanItem => {
-            this.salemanOptions.forEach(optionItem => {
-              if (salesmanItem == optionItem.label) {
-                uids.push(optionItem.value);
-              }
-            });
-          });
-        } else {
-          this.salemanOptions.forEach(optionItem => {
-            if (optionItem.label == this.salesmanMobileValue) {
-              uids.push(optionItem.value);
-            }
-          });
-        }
-      }
-
-      let searchList = [];
       this.mobileSearchButtonLoading = true;
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.rows,
-        page: this.page
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      channelId ? (paramsObj.cid = channelId) : "";
-      productId ? paramsObj.productId : "";
-      if (uids.length > 0) {
-        let uidStr = uids.join(",");
-        paramsObj.uids = uidStr;
-      }
-      this.paramsStorage = paramsObj;
-      getOuterChainTimeslotStatistics(this.category,paramsObj)
-        .then(res => {
-          const tableData = res.data.rows;
-          if (tableData.length === 0) {
-            this.mobileSearchButtonLoading = false;
-            this.mobileSearchShow = false;
-            return;
-          }
-          tableData.forEach(tableItem => {
-            const { timeCount, tNum } = tableItem;
-            const orderItem = { timeslot: timeCount, orderCount: tNum };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-        })
-        .catch(error => {
-          this.mobileSearchButtonLoading = false;
-          this.mobileSearchShow = false;
-          console.log(error);
-        });
+      this.getMobileList();
+      this.mobileSalesmanPickerShow = false;
+      this.mobileSearchShow = false;
     },
     //分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+      this.getMobileList();
     },
     //返回列表
     handleDetailCancel() {
@@ -818,19 +782,16 @@ export default {
     //跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };

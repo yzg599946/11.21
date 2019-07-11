@@ -1,11 +1,18 @@
-<template></template>
+<template>
+  <tencentTable :category="category" />
+</template>
 
 <script>
+import tencentTable from "@/components/tencentTable";
 export default {
   name: "tencent-repellent",
-  components: {},
+  components: {
+    tencentTable
+  },
   data() {
-    return {};
+    return {
+      category: "clothes"
+    };
   }
 };
 </script>

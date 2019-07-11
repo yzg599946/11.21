@@ -133,7 +133,8 @@ export function exportTencentExcel(category, data) {
   return request({
     url: `/admin/tencent/${category}/outExcel`,
     method: 'post',
-    data
+    data,
+    responseType: 'blob'
   })
 }
 
@@ -402,6 +403,15 @@ export function getAllOrderChannel(data) {
   })
 }
 
+// 获取订单渠道时段统计
+export function getAllOrderTime(data) {
+  return request({
+    url: '/admin/order/time',
+    method: 'post',
+    data
+  })
+}
+
 /* 订单总管理 end */
 
 /* 系统管理 start */
@@ -630,9 +640,18 @@ export function generateMenu(data) {
 }
 
 // 产品列表
-export function getMonitorProdutcList(data) {
+export function getMonitorProductList(data) {
   return request({
     url: '/admin/monitorProduct/list',
+    method: 'post',
+    data
+  })
+}
+
+// 通过url导入产品
+export function importMonitorProduct(data) {
+  return request({
+    url: '/admin/monitorProduct/url',
     method: 'post',
     data
   })

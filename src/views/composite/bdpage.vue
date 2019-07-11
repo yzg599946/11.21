@@ -19,7 +19,7 @@
       fit
       v-loading="listLoading"
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
     >
       <el-table-column label="页面" :width="device=='desktop'?'400':'100'" align="center">
@@ -27,11 +27,7 @@
           <span>{{ scope.row.page }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        label="用户"
-        :width="device=='desktop'?'400':'100'"
-        align="center"
-      >
+      <el-table-column label="用户" :width="device=='desktop'?'400':'100'" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.account }}</span>
         </template>
@@ -56,13 +52,13 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -76,8 +72,8 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -162,15 +158,17 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'composite-bdpage',
+  name: "composite-bdpage",
   data() {
     return {
       list: [],
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [50, 100, 200], //单页最大显示条数
       pagesize: 50, //单页内条数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
@@ -189,7 +187,7 @@ export default {
     };
   },
   created() {
-    this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getSalesman();
     this.getProduct();
@@ -206,14 +204,15 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
+      let orderList = [];
       getBaiduPage({ page: this.currentPage, rows: this.pagesize }).then(
         res => {
           let tableList = res.data.rows;
           tableList.forEach(tableItem => {
+            this.listTotal = res.data.total;
             const { pageId, price, productId, uid } = tableItem;
             const orderItem = {
               page: pageId,
@@ -223,10 +222,10 @@ export default {
             };
             orderList.push(orderItem);
           });
+          this.list = orderList;
         }
       );
       setTimeout(() => {
-        this.list = orderList;
         this.listLoading = false;
       }, 500);
     },
@@ -265,20 +264,20 @@ export default {
     // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
-      this.getOrderList();
+      this.getList();
     },
-    //选择表格当前页数
+    // 选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
-      this.getOrderList();
+      this.getList();
     },
-    //新增
+    // 新增
     handleAdd() {
       if (!this.editDialogVisible) {
         this.editDialogVisible = true;
       }
     },
-    //新增验证
+    // 新增验证
     addPageVerify() {
       const { pageId, price, product, salesman } = this.form;
       if (pageId == "") {
@@ -300,7 +299,7 @@ export default {
 
       return true;
     },
-    //确认新增
+    // 确认新增
     handleEditConfirm() {
       if (!this.addPageVerify()) return;
       const { pageId, price, product, salesman } = this.form;
@@ -311,7 +310,7 @@ export default {
         price: price
       }).then(res => {
         if (res.status == 200) {
-          this.list = this.getOrderList();
+          this.list = this.getList();
           this.$message({
             message: "新增成功",
             type: "success"
@@ -322,7 +321,7 @@ export default {
         this.editDialogVisible = false;
       }
     },
-    //取消新增
+    // 取消新增
     handleEditCancel() {
       if (this.editDialogVisible) {
         this.editDialogVisible = false;
@@ -333,10 +332,7 @@ export default {
 
     // 分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+      this.getList();
     },
     // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -345,19 +341,16 @@ export default {
     // 跳转指定页面
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getList();
     }
   }
 };

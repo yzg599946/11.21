@@ -37,28 +37,19 @@
       border
       fit
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
       @cell-click="handleUseful"
       @row-click="handleSelect"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column
-        fixed
-        type="selection"
-        align="center"
-        width="50"
-      ></el-table-column>
-      <el-table-column
-        label="id"
-        :width="device=='desktop'?'500':'170'"
-        align="center"
-      >
+      <el-table-column fixed type="selection" align="center" width="50"></el-table-column>
+      <el-table-column label="id" :width="device=='desktop'?'500':'170'" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="名称" :width="device=='desktop'?'500':'170'" align="center">
+      <el-table-column show-overflow-tooltip label="名称" :width="device=='desktop'?'500':'170'" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
@@ -90,13 +81,13 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
-        <span class="pagejump-count">共{{list.length}}条</span>
+        <span class="pagejump-count">共{{listTotal}}条</span>
         <van-field
           v-model="pageJumpIndex"
           label-width="50"
@@ -110,8 +101,8 @@
         </van-field>
       </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -233,7 +224,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'composite-color',
+  name: "composite-color",
   data() {
     return {
       list: [],
@@ -241,8 +232,10 @@ export default {
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [50, 100, 200], //单页最大显示条数
       pagesize: 50, //单页内条数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
@@ -270,7 +263,7 @@ export default {
     };
   },
   created() {
-    this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
   },
@@ -285,29 +278,33 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getAllColorList({
+      let orderList = [];
+      let paramsObj = {
         contains: false,
         page: this.currentPage,
         rows: this.pagesize
-      }).then(res => {
-        let tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { id, name } = tableItem;
-          const orderItem = {
-            id: id,
-            name: name
-          };
-          orderList.push(orderItem);
+      };
+      this.nameInput != "" ? (paramsObj.name = this.name) : "";
+      getAllColorList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          let tableList = res.data.rows;
+          tableList.forEach(tableItem => {
+            const { id, name } = tableItem;
+            const orderItem = { id: id, name: name };
+            orderList.push(orderItem);
+          });
+          this.list = orderList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      });
       setTimeout(() => {
-        this.list = orderList;
         this.listLoading = false;
-      }, 500);
+      }, 1000);
     },
     // 表格高度自适应
     getHeight() {
@@ -317,28 +314,12 @@ export default {
     // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
-      this.getOrderList();
+      this.getList();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
-      this.getOrderList();
-    },
-    // 选择子渠道表格尺寸
-    handleChildrenSizeChange(val) {
-      this.childrenListLoading = true;
-      setTimeout(() => {
-        this.childrenPagesize = val;
-        this.childrenListLoading = false;
-      }, 500);
-    },
-    // 选择子渠道表格当前页数
-    handleChildrenCurrentChange(val) {
-      this.childrenListLoading = true;
-      setTimeout(() => {
-        this.childrenCurrentPage = val;
-        this.childrenListLoading = false;
-      }, 500);
+      this.getList();
     },
     // 单击复制
     handleUseful(row, column, cell, event) {
@@ -385,35 +366,11 @@ export default {
     },
     // 搜索
     handleSearch() {
-      let orderList = [];
-      const name = this.nameInput;
-      if (name == "") {
+      if (this.nameInput == "") {
         this.$message.error("请输入颜色名称");
         return;
       }
-      this.listLoading = true;
-      this.paramsStorage = {
-        name: name,
-        contains: false,
-        page: this.currentPage,
-        rows: this.pagesize
-      };
-      getAllColorList(paramsStorage)
-        .then(res => {
-          let tableList = res.data.rows;
-          tableList.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = { id: id, name: name };
-            orderList.push(orderItem);
-          });
-        })
-        .catch(error => {
-          console.log(error);
-        });
-      setTimeout(() => {
-        this.listLoading = false;
-        this.list = orderList;
-      }, 500);
+      this.getList();
     },
     // 新增
     handleAdd() {
@@ -443,7 +400,7 @@ export default {
       addColor({ name: colorName })
         .then(res => {
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               message: "新增成功",
               type: "success"
@@ -478,7 +435,7 @@ export default {
       updateColor({ id: id, name: name })
         .then(res => {
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               message: "更新成功",
               type: "success"
@@ -512,7 +469,7 @@ export default {
             message: "删除成功",
             type: "success"
           }),
-            this.reloadPage();
+            this.getList();
         }
         this.deleteDialogVisible = false;
       });
@@ -551,7 +508,7 @@ export default {
             message: "删除成功",
             type: "success"
           }),
-            this.reloadPage();
+            this.getList();
         }
         this.deleteSelectDialogVisible = false;
       });
@@ -564,29 +521,37 @@ export default {
         this.deleteSelectDialogVisible = false;
       }
     },
-    // 重载页面
-    reloadPage() {
-      if (JSON.stringify(this.paramsStorage) == "{}") {
-        this.list = this.getOrderList();
-      } else {
-        let searchList = [];
-        getAllColorList(this.paramsStorage).then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = {
-              id: id,
-              name: name
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-        });
-      }
-    },
 
     /* 移动端事件 */
 
+    //获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let orderList = [];
+      let paramsObj = {
+        contains: false,
+        page: this.mobileCurrentPage,
+        rows: this.pagesize
+      };
+      this.nameMobileValue != "" ? (paramsObj.name = this.nameMobileValue) : "";
+      getAllColorList(paramsObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          let tableList = res.data.rows;
+          tableList.forEach(tableItem => {
+            const { id, name } = tableItem;
+            const orderItem = { id: id, name: name };
+            orderList.push(orderItem);
+          });
+          this.list = orderList;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
     //搜索
     handleSearchMobile() {
       if (!this.mobileSearchShow) {
@@ -605,41 +570,18 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      let orderList = [];
-      const name = this.nameMobileValue;
-      if (name == "") {
+      if (this.nameMobileValue == "") {
         this.$message.error("请输入渠道名称");
-        this.mobileSearchShow = false;
         return;
       }
-      this.listLoading = true;
-      getAllColorList({
-        name: name,
-        contains: false,
-        page: 1,
-        rows: 50
-      })
-        .then(res => {
-          let tableList = res.data.rows;
-          tableList.forEach(tableItem => {
-            const { id, name } = tableItem;
-            const orderItem = { id: id, name: name };
-            orderList.push(orderItem);
-          });
-        })
-        .catch(error => {
-          console.log(error);
-        });
-      this.listLoading = false;
+      this.mobileSearchButtonLoading = true;
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
       this.mobileSearchShow = false;
-      this.list = orderList;
     },
     // 分页器
     handlePageChange() {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 600);
+     this.getMobileList();
     },
     // 限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -647,20 +589,18 @@ export default {
     },
     // 跳转指定页面
     handleJumpPage() {
+      console.log(1)
       let jumpPage = parseInt(this.pageJumpIndex);
-      if (jumpPage == this.currentPage) return;
-      if (jumpPage > Math.ceil(this.list.length / this.pagesize)) {
-        jumpPage = Math.ceil(this.list.length / this.pagesize);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pageJumpIndex = jumpPage;
-        this.currentPage = jumpPage;
-        this.listLoading = false;
-      }, 1000);
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };
