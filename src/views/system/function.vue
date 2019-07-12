@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" v-if="device=='desktop'">
     <el-container>
       <el-aside width="200px">
         <el-tree :data="treeData" :props="defaultProps" @node-click="handleNodeClick"></el-tree>
@@ -32,7 +32,7 @@
           fit
           border
           :max-height="tableMaxHeight"
-          :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+          :data="list"
           style="width: 100%;user-select:none;"
         >
           <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
@@ -49,14 +49,24 @@
           </el-table-column>
           <el-table-column label="操作" :width="300" align="center">
             <template slot-scope="scope">
-              <el-button v-permission="['system-function-list-update']" @click="handleUpdateClick(scope.row)" type="text" size="small">更新</el-button>
-              <el-button v-permission="['system-function-list-delete']" @click="handleDeleteClick(scope.row)" type="text" size="small">删除</el-button>
+              <el-button
+                v-permission="['system-function-list-update']"
+                @click="handleUpdateClick(scope.row)"
+                type="text"
+                size="small"
+              >更新</el-button>
+              <el-button
+                v-permission="['system-function-list-delete']"
+                @click="handleDeleteClick(scope.row)"
+                type="text"
+                size="small"
+              >删除</el-button>
             </template>
           </el-table-column>
         </el-table>
         <!-- 新增权限 -->
         <el-dialog title="新增权限" :visible.sync="addDialogVisible">
-          <el-form :model="addForm">
+          <el-form :model="addForm" size="mini">
             <el-form-item label="是否关联菜单" :label-width="formLabelWidth">
               <el-cascader
                 size="mini"
@@ -95,7 +105,7 @@
         </el-dialog>
         <!-- 更新权限 -->
         <el-dialog title="更新权限" :visible.sync="updateDialogVisible">
-          <el-form :model="updateForm">
+          <el-form :model="updateForm" size="mini">
             <el-form-item label="是否关联菜单" :label-width="formLabelWidth">
               <el-cascader
                 size="mini"
@@ -142,13 +152,13 @@
           :page-sizes="pagesizes"
           :page-size="pagesize"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="list.length"
+          :total="listTotal"
           class="pagination"
         ></el-pagination>
         <!-- 移动端 分页器 -->
         <div v-else class="mobile-pagination">
           <div class="mobile-pagejump">
-            <span class="pagejump-count">共{{list.length}}条</span>
+            <span class="pagejump-count">共{{listTotal}}条</span>
             <van-field
               v-model="pageJumpIndex"
               label-width="50"
@@ -161,7 +171,7 @@
           </div>
           <van-pagination
             v-model="currentPage"
-            :total-items="list.length"
+            :total-items="listTotal"
             :items-per-page="pagesize"
             :show-page-size="3"
             force-ellipses
@@ -176,6 +186,9 @@
         />
       </el-main>
     </el-container>
+  </div>
+  <div v-else class="app-container">
+    <el-alert title="移动端无法访问" description="请在PC端再使用此功能" type="warning" effect="dark" show-icon :closable='false'></el-alert>
   </div>
 </template>
 
@@ -197,7 +210,7 @@ import {
 Vue.use(Pagination);
 
 export default {
-  name:'system-function',
+  name: "system-function",
   directives: { permission },
   data() {
     return {
@@ -212,6 +225,7 @@ export default {
       currentPage: 1, //当前页
       pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
       pagesize: 20, //单页内条数
+      listTotal: 0, //总数
       clickFlag: null, // 单击定时器
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
@@ -240,12 +254,13 @@ export default {
       },
       parentMenu: [],
       menuId: "",
-      multipleSelection:[]
+      multipleSelection: [],
+      id: "?id=0"
     };
   },
   created() {
     this.getTreeData();
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
@@ -273,11 +288,16 @@ export default {
         }
       });
     },
-    // 获取表格列表
-    getOrderList() {
+    // 获取数据
+    getList() {
       let orderList = [];
       this.listLoading = true;
-      getFunctionList({ page: 1, rows: 50 }, "?id=0").then(res => {
+      console.log(this.id);
+      getFunctionList(
+        { page: this.currentPage, rows: this.pagesize },
+        this.id
+      ).then(res => {
+        this.listTotal = res.data.total;
         let tableList = res.data.rows;
         tableList.forEach(tableItem => {
           const { name, code, id, parentId } = tableItem;
@@ -289,9 +309,11 @@ export default {
           };
           orderList.push(orderItem);
         });
+        this.list = orderList;
       });
-      this.listLoading = false;
-      return orderList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     //表格高度自适应
     getHeight() {
@@ -328,25 +350,18 @@ export default {
     },
     //选择表格尺寸
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getList();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getList();
     },
     // 新增
     handleAdd() {
       this.addDialogVisible = true;
       getMenuTree().then(res => {
-        console.log(res);
         this.parentMenu = res.data;
       });
     },
@@ -389,7 +404,6 @@ export default {
     },
     // 关联菜单改变
     handleSelectMenuChange(e) {
-      console.log(e)
       this.menuId = e;
     },
     // 更新
@@ -449,7 +463,7 @@ export default {
           this.listLoading = true;
           deleteFunction({ id: row.id }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "删除权限成功"
@@ -472,7 +486,7 @@ export default {
     },
     // 批量删除
     handleDeleteSelect() {
-       this.$confirm("此操作将永久删除该权限, 是否继续?", "提示", {
+      this.$confirm("此操作将永久删除该权限, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
@@ -489,7 +503,7 @@ export default {
           let idsStr = ids.join(",");
           deleteSelectFunction({ ids: idsStr }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "批量删除权限成功"
@@ -509,31 +523,14 @@ export default {
     // 树形图节点点击事件
     handleNodeClick(e) {
       this.currentId = e.functionId;
-      let id = `?id=${e.id}`;
-      let orderList = [];
-      this.listLoading = true;
-      getFunctionList({ page: 1, rows: 50 }, id).then(res => {
-        let tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { name, code, id, parentId } = tableItem;
-          const orderItem = {
-            name: name,
-            code: code,
-            id: id,
-            parentId: parentId
-          };
-          orderList.push(orderItem);
-        });
-      });
-      this.listLoading = false;
-      this.list = orderList;
+      this.id = `?id=${e.id}`;
+      console.log(this.id);
+      this.getList();
     },
     // 选择发生改变
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-    // 重载页面
-    reloadPage() {},
 
     /* 移动端事件 */
 

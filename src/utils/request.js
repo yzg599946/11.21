@@ -54,6 +54,13 @@ service.interceptors.response.use(
     }
 
     const res = response.data
+    // if (res.status === undefined) {
+    //   Message({
+    //     message: '请重新登陆',
+    //     type: 'error',
+    //     duration: 5 * 1000
+    //   })
+    // }
     // if the custom code is not 20000, it is judged as an error.
     if (res.status !== 200) {
       Message({

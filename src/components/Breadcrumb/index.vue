@@ -34,7 +34,6 @@ export default {
       if (!this.isHomepage(first)) {
         matched = [{ path: '/homepage', meta: { title: '首页' }}].concat(matched)
       }
-
       this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
     },
     isHomepage(route) {

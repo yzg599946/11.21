@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" v-if="device=='desktop'">
     <!-- PC端 功能按钮 -->
     <div v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="名称" v-model="nameInput" clearable></el-input>
@@ -9,6 +9,7 @@
         class="filter-item"
         type="primary"
         icon="el-icon-search"
+        :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
       <el-button
@@ -91,14 +92,24 @@
       </el-table-column>
       <el-table-column label="操作" :width="300" align="center">
         <template slot-scope="scope">
-          <el-button v-permission="['system-menu-list-update']" @click="handleUpdateClick(scope.row)" type="text" size="small">更新</el-button>
-          <el-button v-permission="['system-menu-list-delete']" @click="handleDeleteClick(scope.row)" type="text" size="small">删除</el-button>
+          <el-button
+            v-permission="['system-menu-list-update']"
+            @click="handleUpdateClick(scope.row)"
+            type="text"
+            size="small"
+          >更新</el-button>
+          <el-button
+            v-permission="['system-menu-list-delete']"
+            @click="handleDeleteClick(scope.row)"
+            type="text"
+            size="small"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!-- 新增菜单 -->
     <el-dialog title="新增菜单" :visible.sync="addDialogVisible">
-      <el-form :model="addForm">
+      <el-form :model="addForm" size="mini">
         <el-form-item label="所属菜单" :label-width="formLabelWidth">
           <el-select
             size="mini"
@@ -120,12 +131,18 @@
             v-model="addForm.childrenName"
             clearable
             placeholder="请输入子菜单名"
-            class="normal-edit" 
+            class="normal-edit"
             size="mini"
           ></el-input>
         </el-form-item>
         <el-form-item label="Url" :label-width="formLabelWidth">
-          <el-input v-model="addForm.url" clearable placeholder="请输入Url" class="normal-edit" size="mini"></el-input>
+          <el-input
+            v-model="addForm.url"
+            clearable
+            placeholder="请输入Url"
+            class="normal-edit"
+            size="mini"
+          ></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -135,7 +152,7 @@
     </el-dialog>
     <!-- 更新菜单 -->
     <el-dialog title="更新菜单" :visible.sync="updateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="所属菜单" :label-width="formLabelWidth">
           <el-select
             size="mini"
@@ -162,7 +179,13 @@
           ></el-input>
         </el-form-item>
         <el-form-item label="Url" :label-width="formLabelWidth">
-          <el-input v-model="updateForm.url" clearable placeholder="请输入Url" class="normal-edit" size="mini"></el-input>
+          <el-input
+            v-model="updateForm.url"
+            clearable
+            placeholder="请输入Url"
+            class="normal-edit"
+            size="mini"
+          ></el-input>
         </el-form-item>
         <el-form-item label="是否可用" :label-width="formLabelWidth">
           <template>
@@ -180,7 +203,7 @@
     </el-dialog>
     <!-- 一键生成 -->
     <el-dialog title="一键生成" :visible.sync="generateDialogVisible">
-      <el-form :model="generateForm">
+      <el-form :model="generateForm" size="mini">
         <el-form-item label="菜单中文名" :label-width="formLabelWidth">
           <el-input
             v-model="generateForm.chineseName"
@@ -249,6 +272,16 @@
       </van-popup>
     </div>
   </div>
+  <div v-else class="app-container">
+    <el-alert
+      title="移动端无法访问"
+      description="请在PC端再使用此功能"
+      type="warning"
+      effect="dark"
+      show-icon
+      :closable="false"
+    ></el-alert>
+  </div>
 </template>
 
 <script>
@@ -296,7 +329,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'system-menu',
+  name: "system-menu",
   directives: { permission },
   data() {
     return {
@@ -312,11 +345,14 @@ export default {
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [50, 100, 200], //单页最大显示条数
       pagesize: 50, //单页内条数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
+      searchButtonLoading: false,
       tableMaxHeight: 0,
       childrenListTitle: "",
       parentMenu: [],
@@ -336,14 +372,13 @@ export default {
         englishName: ""
       },
       updateId: "",
-      paramsStorage: {},
       childrenParamsStorage: {},
       multipleSelection: [],
       returnButton: false
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
     this.getParentMenuList();
@@ -359,25 +394,38 @@ export default {
     }
   },
   methods: {
-    // 获取表格列表
-    getOrderList() {
+    // 获取数据
+    getList() {
+      this.listLoading = true;
+      let name = this.nameInput;
+      let uri = this.linkInput;
+      let paramsObj = {
+        contains: false,
+        page: this.currentPage,
+        rows: this.pagesize
+      };
+      name != "" ? (paramsObj.name = name) : "";
+      uri != "" ? (paramsObj.uri = uri) : "";
       let orderList = [];
-      getMenuList({ contains: false, page: 1, rows: 500 }).then(res => {
+      getMenuList(paramsObj).then(res => {
+        this.listTotal = res.data.total;
         let tableList = res.data.rows;
         tableList.forEach(tableItem => {
-          const { name, uri, mode, sort, id, parentId } = tableItem;
+          const { name, uri, mode, sort, id } = tableItem;
           const orderItem = {
             name: name,
             linkAddress: uri,
             isUseful: mode,
             sort: sort,
-            id: id,
-            parentId: parentId
+            id: id
           };
           orderList.push(orderItem);
         });
+        this.list = orderList;
       });
-      return orderList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     // 获取所有一级菜单
     getParentMenuList() {
@@ -402,31 +450,29 @@ export default {
     },
     // 表格条数变化
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getList();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getList();
     },
+    // 获取子菜单数据
+    getChildrenList() {},
     // 查看子菜单
     handleChildrenMenu(row, column, event) {
       if (row.parentId != 0) return;
       this.returnButton = true;
-      this.childrenParamsStorage = {
+      this.currentPage = 1;
+      this.pagesize = 50;
+      this.childrenParamsOjb = {
         parentId: row.id,
         contains: false,
-        page: 1,
-        rows: 500
+        page: this.currentPage,
+        rows: this.pagesize
       };
-      getMenuList(this.childrenParamsStorage).then(res => {
+      getMenuList(this.childrenParamsOjb).then(res => {
         let orderList = [];
         let tableList = res.data.rows;
         tableList.forEach(tableItem => {
@@ -447,32 +493,13 @@ export default {
     // 返回主菜单列表
     handleReturnList() {
       this.returnButton = false;
-      this.list = this.getOrderList();
+      this.list = this.getList();
     },
     // 搜索
     handleSearch() {
-      let name = this.nameInput;
-      let uri = this.linkInput;
-      let paramsObj = { contains: false, page: 1, rows: 500 };
-      name != "" ? (paramsObj.name = name) : "";
-      uri != "" ? (paramsObj.uri = uri) : "";
-      let orderList = [];
-      this.paramsStorage = paramsObj;
-      getMenuList(paramsObj).then(res => {
-        let tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { name, uri, mode, sort, id } = tableItem;
-          const orderItem = {
-            name: name,
-            linkAddress: uri,
-            isUseful: mode,
-            sort: sort,
-            id: id
-          };
-          orderList.push(orderItem);
-        });
-        this.list = orderList;
-      });
+      this.searchButtonLoading = true;
+      this.getList();
+      this.searchButtonLoading = false;
     },
     // 清空搜索项
     handleClearSearch() {
@@ -510,7 +537,7 @@ export default {
       })
         .then(res => {
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "新增成功"
@@ -560,7 +587,7 @@ export default {
         .then(res => {
           console.log(res);
           if (res.status == 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "更新成功"
@@ -587,7 +614,7 @@ export default {
           this.listLoading = true;
           deleteMenu({ id: row.id }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "删除菜单成功"
@@ -627,7 +654,7 @@ export default {
           let idsStr = ids.join(",");
           deleteSelectMenu({ ids: idsStr }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "批量删除菜单成功"
@@ -683,7 +710,7 @@ export default {
         _: timestamp
       }).then(res => {
         if (res.status == 200) {
-          this.reloadPage();
+          this.getList();
           this.$message({
             type: "success",
             message: "操作成功"
@@ -701,7 +728,7 @@ export default {
         _: timestamp
       }).then(res => {
         if (res.status == 200) {
-          this.reloadPage();
+          this.getList();
           this.$message({
             type: "success",
             message: "操作成功"
@@ -712,50 +739,6 @@ export default {
     // 选择发生改变
     handleSelectionChange(val) {
       this.multipleSelection = val;
-    },
-    // 重载页面
-    reloadPage() {
-      if (!this.returnButton) {
-        if (JSON.stringify(this.paramsStorage) == "{}") {
-          this.list = this.getOrderList();
-        } else {
-          let searchList = [];
-          getMenuList(this.paramsStorage).then(res => {
-            const tableData = res.data.rows;
-            tableData.forEach(tableItem => {
-              const { id, username, name, telephone, mode } = tableItem;
-              const orderItem = {
-                id: id,
-                username: username,
-                name: name,
-                phoneNumber: telephone,
-                isUseful: mode
-              };
-              searchList.push(orderItem);
-            });
-            this.list = searchList;
-          });
-        }
-      } else {
-        let searchList = [];
-        getMenuList(this.childrenParamsStorage).then(res => {
-          let orderList = [];
-          let tableList = res.data.rows;
-          tableList.forEach(tableItem => {
-            const { name, uri, mode, id, parentId, sort } = tableItem;
-            const orderItem = {
-              name: name,
-              linkAddress: uri,
-              isUseful: mode,
-              id: id,
-              parentId: parentId,
-              sort: sort
-            };
-            orderList.push(orderItem);
-          });
-          this.list = orderList;
-        });
-      }
     },
 
     /* 移动端事件 */

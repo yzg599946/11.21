@@ -742,6 +742,16 @@ export function getJingdongLogisticsList(data) {
   })
 }
 
+// 导出excel
+export function exportLogisticsExcel(data, type) {
+  return request({
+    url: `/admin/logistics/${type}/export`,
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}
+
 // 导出头条
 export function exportToutiao(data, type) {
   return request({
@@ -753,9 +763,9 @@ export function exportToutiao(data, type) {
 }
 
 // 计算签收率
-export function logisticsSigned(data) {
+export function logisticsSigned(data, type) {
   return request({
-    url: `/admin/logistics/jd/signed`,
+    url: `/admin/logistics/${type}/signed`,
     method: 'post',
     data
   })
@@ -763,9 +773,9 @@ export function logisticsSigned(data) {
 
 // 批量查询物流状态
 
-export function logisticslogBatch(data) {
+export function logisticslogBatch(data, type) {
   return request({
-    url: `/admin/logistics/jd/logBatch`,
+    url: `/admin/logistics/${type}/logBatch`,
     method: 'post',
     data
   })

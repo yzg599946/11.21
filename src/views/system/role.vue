@@ -8,6 +8,7 @@
         class="filter-item"
         type="primary"
         icon="el-icon-search"
+        :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
       <el-button
@@ -15,14 +16,14 @@
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-search"
+        icon="el-icon-plus"
         @click="handleAdd"
       >新增</el-button>
       <el-button
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-search"
+        icon="el-icon-delete"
         @click="handleDeleteSelect"
       >批量删除</el-button>
     </div>
@@ -38,10 +39,9 @@
       border
       @selection-change="handleSelectionChange"
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
     >
-      <el-table-column v-if="device=='desktop'" fixed type="selection" width="60" align="center"></el-table-column>
       <el-table-column label="id" :width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
@@ -52,27 +52,39 @@
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
+      <el-table-column v-if="device=='desktop'" fixed type="selection" width="60" align="center"></el-table-column>
       <el-table-column
-        v-if="device=='desktop'&& checkPermission(['system-role-list-update','system-role-list-delete'])"
+        v-if="device=='desktop' && checkPermission(['system-role-list-update','system-role-list-delete'])"
         label="操作"
         :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
-          <el-button v-permission="['system-role-list-update']" @click="handleUpdata(scope.row)" type="text" size="small">更新</el-button>
-          <el-button v-permission="['system-role-list-delete']" @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+          <el-button
+            v-permission="['system-role-list-update']"
+            @click="handleUpdata(scope.row)"
+            type="text"
+            size="small"
+          >更新</el-button>
+          <el-button
+            v-permission="['system-role-list-delete']"
+            @click="handleDelete(scope.row)"
+            type="text"
+            size="small"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!-- 新增角色窗口 -->
     <el-dialog title="新增角色" :visible.sync="addDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="角色名" :label-width="formLabelWidth">
           <el-input v-model="form.name" clearable placeholder="请输入角色名" class="normal-edit"></el-input>
         </el-form-item>
         <el-form-item label="权限" :label-width="formLabelWidth">
           <el-tree
             :data="treeData"
+            accordion
             show-checkbox
             node-key="id"
             :props="defaultProps"
@@ -87,7 +99,7 @@
     </el-dialog>
     <!-- 更新用户窗口 -->
     <el-dialog title="更新角色" :visible.sync="updateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="角色名" :label-width="formLabelWidth">
           <el-input v-model="updateForm.name" clearable placeholder="请输入角色名" class="normal-edit"></el-input>
         </el-form-item>
@@ -121,9 +133,23 @@
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
+      <div class="mobile-pagejump">
+        <span class="pagejump-count">共{{listTotal}}条</span>
+        <van-field
+          v-model="pageJumpIndex"
+          label-width="50"
+          center
+          label="跳转至"
+          @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
+        >
+          <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
+        </van-field>
+      </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -139,16 +165,26 @@
             left-text="返回"
             right-text="清空"
             left-arrow
-            @click-left="handleAddMobileCancel"
+            @click-left="handleSearchMobileCancel"
             @click-right="handleSearchMobileClearAll"
           />
+          <van-cell-group>
+            <van-field
+              clearable
+              label="角色名"
+              v-model="nameMobileValue"
+              placeholder="请输入角色名"
+              input-align="right"
+              is-link
+            />
+          </van-cell-group>
           <div class="mobile-search">
             <van-button
               type="info"
               :loading="mobileSearchButtonLoading"
               :disabled="mobileSearchButtonLoading"
               size="large"
-              @click="handleMobileAdd"
+              @click="handleMobileSearch"
             >搜索</van-button>
           </div>
         </div>
@@ -160,7 +196,7 @@
 <script>
 import Vue from "vue";
 import permission from "@/directive/permission/index.js"; // 权限判断指令
-import checkPermission from '@/utils/permission' // 权限判断函数
+import checkPermission from "@/utils/permission"; // 权限判断函数
 import {
   getRoleList,
   addRoleInquired,
@@ -201,7 +237,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'system-role',
+  name: "system-role",
   directives: { permission },
   data() {
     return {
@@ -222,11 +258,14 @@ export default {
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [100, 200, 500], //单页最大显示条数
       pagesize: 100, //单页内条数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
+      searchButtonLoading: false,
       tableMaxHeight: 0,
       addDialogVisible: false,
       updateDialogVisible: false,
@@ -243,7 +282,6 @@ export default {
         mode: ""
       },
       updatePermissionList: [],
-      paramsStorage: {},
       listLoading: false,
       multipleSelection: [],
       updateId: "",
@@ -252,11 +290,13 @@ export default {
         children: "children",
         label: "name"
       },
-      updateTreeData: []
+      updateTreeData: [],
+      pageJumpIndex: 1,
+      nameMobileValue: ""
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
   },
@@ -272,59 +312,15 @@ export default {
   },
   methods: {
     checkPermission,
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getRoleList({ page: 1, rows: 50 }).then(res => {
-        const tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { id, name } = tableItem;
-          const orderItem = {
-            id: id,
-            name: name
-          };
-          orderList.push(orderItem);
-        });
-      });
-      this.listLoading = false;
-      return orderList;
-    },
-    //表格高度自适应
-    getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
-    },
-    // 页面条数切换
-    handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    //选择表格当前页数
-    handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
-    },
-    // 选择改变
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
-    },
-    // 搜索
-    handleSearch() {
       let searchList = [];
-      this.listLoading = true;
-      let name = this.usernameInput;
       let paramObj = {
-        page: 1,
-        rows: 500
+        page: this.currentPage,
+        rows: this.pagesize
       };
-      name ? (paramObj.name = name) : "", (this.paramsStorage = paramObj);
+      this.usernameInput ? (paramObj.name = name) : "";
       getRoleList(paramObj).then(res => {
         const tableList = res.data.rows;
         tableList.forEach(tableItem => {
@@ -335,9 +331,36 @@ export default {
           };
           searchList.push(orderItem);
         });
+        this.list = searchList;
       });
-      this.listLoading = false;
-      this.list = searchList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
+    //表格高度自适应
+    getHeight() {
+      let otherHeight = this.device == "desktop" ? 250 : 200;
+      this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
+    // 页面条数切换
+    handleSizeChange(val) {
+      this.pagesize = val;
+      this.getList();
+    },
+    //选择表格当前页数
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.getList();
+    },
+    // 选择改变
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+    // 搜索
+    handleSearch() {
+      this.searchButtonLoading = true;
+      this.getList();
+      this.searchButtonLoading = false;
     },
     // 新增
     handleAdd() {
@@ -370,7 +393,7 @@ export default {
       })
         .then(res => {
           if (res.status === 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "添加用户成功"
@@ -390,14 +413,14 @@ export default {
       updateRoleInquired({ id: rows.id }).then(res => {
         this.updateId = rows.id;
         this.updateForm.name = res.data.role.name;
-        this.updateForm.checkList = res.data.functiona
+        this.updateForm.checkList = res.data.functiona;
         this.updateTreeData = res.data.functionList;
       });
       this.updateDialogVisible = true;
     },
     // 权限选择变化时
-    handleUpdatePermisionCheck(current, status){
-       this.updateForm.checkList = status.checkedKeys;
+    handleUpdatePermisionCheck(current, status) {
+      this.updateForm.checkList = status.checkedKeys;
     },
     // 取消更新
     handleUpdateCancel() {
@@ -423,7 +446,7 @@ export default {
       })
         .then(res => {
           if (res.status === 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "更新用户成功"
@@ -449,7 +472,7 @@ export default {
           this.listLoading = true;
           deleteRole({ id: rows.id }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "删除角色成功"
@@ -486,7 +509,7 @@ export default {
           let idsStr = ids.join(",");
           deleteSelectRole({ ids: idsStr }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "批量删除角色成功"
@@ -503,44 +526,80 @@ export default {
           });
         });
     },
-    // 重载页面
-    reloadPage() {
-      if (JSON.stringify(this.paramsStorage) == "{}") {
-        this.list = this.getOrderList();
-      } else {
-        let searchList = [];
-        getUserList(this.paramsStorage).then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const { id, username, name, telephone, mode } = tableItem;
-            const orderItem = {
-              id: id,
-              username: username,
-              name: name,
-              phoneNumber: telephone,
-              isUseful: mode
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
-        });
-      }
-    },
 
     /* 移动端事件 */
-    //新增
-    handleSearchMobile() {},
-    //取消新增
-    handleAddMobileCancel() {},
-    //确认新增
-    handleMobileAdd() {},
-    //清空所选
-    handleSearchMobileClearAll() {},
-    //分页器改变
-    handlePageChange() {},
-    //返回列表
-    handleDetailCancel() {
-      this.mobileDetailShow = !this.mobileDetailShow;
+
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let searchList = [];
+      let paramObj = {
+        page: this.mobileCurrentPage,
+        rows: this.pagesize
+      };
+      this.nameMobileValue ? (paramObj.name = this.nameMobileValue) : "";
+      getRoleList(paramObj).then(res => {
+        console.log(res)
+        this.listTotal = res.data.total;
+        const tableList = res.data.rows;
+        tableList.forEach(tableItem => {
+          const { id, name } = tableItem;
+          const orderItem = {
+            id: id,
+            name: name
+          };
+          searchList.push(orderItem);
+        });
+        this.list = searchList;
+      });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
+    // 搜索
+    handleSearchMobile() {
+      if (!this.mobileSearchShow) {
+        this.mobileSearchShow = !this.mobileSearchShow;
+      }
+    },
+    // 取消搜索
+    handleSearchMobileCancel() {
+      if (this.mobileSearchShow) {
+        this.mobileSearchShow = !this.mobileSearchShow;
+      }
+    },
+    // 确认搜索
+    handleMobileSearch() {
+      this.mobileSearchButtonLoading = true;
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
+    },
+    // 清空所选
+    handleSearchMobileClearAll() {
+      this.nameMobileValue = "";
+    },
+    // 分页器改变
+    handlePageChange() {
+      this.getMobileList();
+    },
+    // 限制页面跳转输入框只能输入数字
+    jumpPageInput() {
+      this.pageJumpIndex = this.pageJumpIndex.replace(/[^\d]/g, "");
+    },
+    // 跳转指定页面
+    handleJumpPage() {
+      let jumpPage = parseInt(this.pageJumpIndex);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
+      }
+      if (jumpPage < 1) {
+        jumpPage = 1;
+      }
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };
@@ -591,5 +650,19 @@ export default {
   padding: 10px;
   width: 100%;
   box-shadow: 0 0 10px #e5e5e5;
+}
+.mobile-pagejump {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ebedf0;
+}
+
+.mobile-pagejump .pagejump-count {
+  font-size: 14px;
+  color: #323233;
+  padding-left: 10px;
+  width: 35%;
 }
 </style>

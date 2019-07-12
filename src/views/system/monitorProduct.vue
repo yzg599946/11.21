@@ -107,7 +107,7 @@
       <el-upload
         class="upload-demo"
         ref="upload"
-        action="http://192.168.1.143:8089/admin/monitorProduct"
+        :action="baseUrl+'/admin/monitorProduct'"
         :on-preview="handlePreview"
         :on-remove="handleRemove"
         :file-list="fileList"
@@ -259,7 +259,8 @@ export default {
       dialogVisible: false,
       urlInput: "",
       fileList: [],
-      importLoading: false
+      importLoading: false,
+      baseUrl: ""
     };
   },
   created() {
@@ -267,6 +268,7 @@ export default {
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
+    this.baseUrl = process.env.VUE_APP_BASE_API;
   },
   destroyed() {
     window.removeEventListener("resize", this.getHeight);

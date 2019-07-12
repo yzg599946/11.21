@@ -407,8 +407,8 @@ export default {
       this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
       let paramsObj = {
         contains: this.contains,
-        rows: this.rows,
-        page: this.page
+        rows: this.pagesize,
+        page: this.currentPage
       };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -592,7 +592,6 @@ export default {
         let uidStr = uids.join(",");
         paramsObj.uids = uidStr;
       }
-      this.paramsStorage = paramsObj;
       getOuterChainTimeslotStatistics(this.category, paramsObj)
         .then(res => {
           this.listTotal = res.data.total;

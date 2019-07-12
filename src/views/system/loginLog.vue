@@ -51,7 +51,7 @@
       fit
       border
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
     >
       <el-table-column
@@ -107,15 +107,14 @@
     </el-table>
     <!-- PC端 分页器 -->
     <el-pagination
-      v-if="device=='desktop'"
+      v-if="device!='mobile'"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       :current-page="currentPage"
       :page-sizes="pagesizes"
       :page-size="pagesize"
-      hide-on-single-page
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
@@ -273,7 +272,24 @@ export default {
     return {
       list: [],
       pickerOptions: {
-        shortcuts: []
+        shortcuts: [
+          {
+            text: "上月",
+            onClick(picker) {
+              const start = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1
+              );
+              const end = new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1
+              );
+              picker.$emit("pick", [start, end]);
+            }
+          }
+        ]
       },
       formLabelWidth: "120px",
       dialogTableVisible: false,

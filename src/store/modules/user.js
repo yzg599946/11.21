@@ -3,7 +3,7 @@ import { getToken, setToken, removeToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
 const state = {
-  token: getToken(),
+  token: getToken('lht_admin_token'),
   name: '',
   avatar: '',
   roles: '',
@@ -39,6 +39,7 @@ const actions = {
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password, verification: verification }).then(response => {
         const { data } = response
+        console.log(`token${data}`)
         commit('SET_TOKEN', data)
         setToken(data)
         resolve()

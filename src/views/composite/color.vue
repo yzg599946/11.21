@@ -111,7 +111,7 @@
     </div>
     <!-- 更新颜色 -->
     <el-dialog title="更新颜色" :visible.sync="UpdateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="颜色" :label-width="formLabelWidth">
           <el-input v-model="updateForm.name" clearable placeholder="请输入名称" class="normal-edit"></el-input>
         </el-form-item>
@@ -123,7 +123,7 @@
     </el-dialog>
     <!-- 新增颜色 -->
     <el-dialog title="新增颜色" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="颜色" :label-width="formLabelWidth">
           <el-input v-model="form.colorName" clearable placeholder="请输入名称" class="normal-edit"></el-input>
         </el-form-item>
@@ -254,7 +254,6 @@ export default {
       pageJumpIndex: 1,
       nameMobileValue: "",
       tableMaxHeight: 0,
-      paramsStorage: {},
       multipleSelection: [],
       deleteId: "",
       deleteName: "",
@@ -589,7 +588,6 @@ export default {
     },
     // 跳转指定页面
     handleJumpPage() {
-      console.log(1)
       let jumpPage = parseInt(this.pageJumpIndex);
       if (jumpPage == this.mobileCurrentPage) return;
       if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {

@@ -16,6 +16,7 @@
         class="filter-item"
         type="primary"
         icon="el-icon-search"
+        :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
       <el-button
@@ -23,14 +24,14 @@
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-search"
+        icon="el-icon-plus"
         @click="handleAdd"
       >新增</el-button>
       <el-button
         size="mini"
         class="filter-item"
         type="primary"
-        icon="el-icon-search"
+        icon="el-icon-delete"
         @click="handleDeleteSelect"
       >批量删除</el-button>
     </div>
@@ -44,7 +45,6 @@
       v-loading="listLoading"
       fit
       border
-      show-summary
       @selection-change="handleSelectionChange"
       :max-height="tableMaxHeight"
       :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
@@ -83,14 +83,24 @@
         align="center"
       >
         <template slot-scope="scope">
-          <el-button v-permission="['system-user-list-update']" @click="handleUpdata(scope.row)" type="text" size="small">更新</el-button>
-          <el-button v-permission="['system-user-list-delete']" @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+          <el-button
+            v-permission="['system-user-list-update']"
+            @click="handleUpdata(scope.row)"
+            type="text"
+            size="small"
+          >更新</el-button>
+          <el-button
+            v-permission="['system-user-list-delete']"
+            @click="handleDelete(scope.row)"
+            type="text"
+            size="small"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!-- 新增用户窗口 -->
     <el-dialog title="新增用户" :visible.sync="addDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="关联角色" :label-width="formLabelWidth">
           <template>
             <el-checkbox
@@ -134,7 +144,7 @@
     </el-dialog>
     <!-- 更新用户窗口 -->
     <el-dialog title="更新用户" :visible.sync="updateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="关联角色" :label-width="formLabelWidth">
           <template>
             <el-checkbox-group v-model="updateForm.checkList" @change="handleUpdateCheckListChange">
@@ -203,9 +213,23 @@
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
+      <div class="mobile-pagejump">
+        <span class="pagejump-count">共{{listTotal}}条</span>
+        <van-field
+          v-model="pageJumpIndex"
+          label-width="50"
+          center
+          label="跳转至"
+          @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
+        >
+          <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
+        </van-field>
+      </div>
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
@@ -221,18 +245,38 @@
             left-text="返回"
             right-text="清空"
             left-arrow
-            @click-left="handleAddMobileCancel"
+            @click-left="handleSearchMobileCancel"
             @click-right="handleSearchMobileClearAll"
           />
+          <van-cell-group>
+            <van-field
+              clearable
+              label="用户名"
+              v-model="nameMobileValue"
+              placeholder="请输入用户名"
+              input-align="right"
+              is-link
+            />
+            <van-cell @click="handleChooseUseful" title="是否可用" is-link :value="usefulMobileValue" />
+          </van-cell-group>
           <div class="mobile-search">
             <van-button
               type="info"
               :loading="mobileSearchButtonLoading"
               :disabled="mobileSearchButtonLoading"
               size="large"
-              @click="handleMobileAdd"
+              @click="handleMobileSearch"
             >搜索</van-button>
           </div>
+          <!--是否有效选择弹窗-->
+          <van-popup v-model="mobileUsefulPickerShow" position="bottom">
+            <van-picker
+              show-toolbar
+              :columns="usefulColumns"
+              @cancel="mobileUsefulPickerShow = false"
+              @confirm="usefulPickerConfirm"
+            />
+          </van-popup>
         </div>
       </van-popup>
     </div>
@@ -242,7 +286,7 @@
 <script>
 import Vue from "vue";
 import permission from "@/directive/permission/index.js"; // 权限判断指令
-import checkPermission from '@/utils/permission' // 权限判断函数
+import checkPermission from "@/utils/permission"; // 权限判断函数
 import {
   getUserList,
   deleteUser,
@@ -283,7 +327,7 @@ Vue.use(ActionSheet);
 Vue.use(Search);
 
 export default {
-  name:'system-user',
+  name: "system-user",
   directives: { permission },
   data() {
     return {
@@ -304,9 +348,15 @@ export default {
       formLabelWidth: "120px",
       dialogTableVisible: false,
       currentPage: 1, //当前页
+      mobileCurrentPage: 1,
       pagesizes: [100, 200, 500], //单页最大显示条数
       pagesize: 100, //单页内条数
+      listTotal: 0, //总数
       device: "",
+      nameMobileValue: "",
+      usefulMobileValue: "请选择",
+      mobileUsefulPickerShow: false,
+      searchButtonLoading: false,
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
       tableMaxHeight: 0,
@@ -329,16 +379,16 @@ export default {
       },
       permissionList: [],
       updatePermissionList: [],
-      paramsStorage: {},
       listLoading: false,
       multipleSelection: [],
       updateId: "",
       checkAll: false,
-      isIndeterminate: false
+      isIndeterminate: false,
+      pageJumpIndex: 1
     };
   },
   created() {
-    this.list = this.getOrderList();
+    this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
   },
@@ -354,26 +404,43 @@ export default {
   },
   methods: {
     checkPermission,
-    // 获取表格列表
-    getOrderList() {
-      let orderList = [];
+    // 获取数据
+    getList() {
       this.listLoading = true;
-      getUserList({ page: 1, rows: 500 }).then(res => {
-        const tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { id, username, name, telephone, mode } = tableItem;
-          const orderItem = {
-            id: id,
-            username: username,
-            name: name,
-            phoneNumber: telephone,
-            isUseful: mode
-          };
-          orderList.push(orderItem);
+      let searchList = [];
+      let name = this.usernameInput;
+      let isUseful = this.usefulValue;
+      let paramObj = {
+        contains:false,
+        page: this.currentPage,
+        rows: this.pagesize
+      };
+      name ? (paramObj.name = name) : "",
+        isUseful ? (paramObj.mode = isUseful) : "";
+      getUserList(paramObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableList = res.data.rows;
+          console.log(res)
+          tableList.forEach(tableItem => {
+            const { id, username, name, telephone, mode } = tableItem;
+            const orderItem = {
+              id: id,
+              username: username,
+              name: name,
+              phoneNumber: telephone,
+              isUseful: mode
+            };
+            searchList.push(orderItem);
+          });
+          this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
         });
-      });
-      this.listLoading = false;
-      return orderList;
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     //表格高度自适应
     getHeight() {
@@ -382,19 +449,13 @@ export default {
     },
     // 页面条数切换
     handleSizeChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.pagesize = val;
-        this.listLoading = false;
-      }, 500);
+      this.pagesize = val;
+      this.getList();
     },
     //选择表格当前页数
     handleCurrentChange(val) {
-      this.listLoading = true;
-      setTimeout(() => {
-        this.currentPage = val;
-        this.listLoading = false;
-      }, 500);
+      this.currentPage = val;
+      this.getList();
     },
     // 选择改变
     handleSelectionChange(val) {
@@ -402,33 +463,9 @@ export default {
     },
     // 搜索
     handleSearch() {
-      let searchList = [];
-      this.listLoading = true;
-      let name = this.usernameInput;
-      let isUseful = this.usefulValue;
-      let paramObj = {
-        page: 1,
-        rows: 500
-      };
-      name ? (paramObj.name = name) : "",
-        isUseful ? (paramObj.mode = isUseful) : "";
-      this.paramsStorage = paramObj;
-      getUserList(paramObj).then(res => {
-        const tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { id, username, name, telephone, mode } = tableItem;
-          const orderItem = {
-            id: id,
-            username: username,
-            name: name,
-            phoneNumber: telephone,
-            isUseful: mode
-          };
-          searchList.push(orderItem);
-        });
-      });
-      this.listLoading = false;
-      this.list = searchList;
+      this.searchButtonLoading = true;
+      this.getList();
+      thissearchButtonLoading = false;
     },
     // 新增
     handleAdd() {
@@ -484,7 +521,7 @@ export default {
       })
         .then(res => {
           if (res.status === 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "添加用户成功"
@@ -501,14 +538,22 @@ export default {
     },
     // 全选
     handleCheckAllChange(val) {
-      this.form.checkList = val ? [] : [];
+      let allCheckList = [];
+      this.permissionList.forEach(item => {
+        allCheckList.push(item.id);
+      });
+      val ? (this.form.checkList = allCheckList) : (this.form.checkList = []);
       this.isIndeterminate = false;
     },
+    // 选择改变时
     handleCheckedCitiesChange(val) {
+      let allCheckList = [];
+      this.permissionList.forEach(item => {
+        allCheckList.push(item.id);
+      });
       let checkedCount = val.length;
       this.checkAll = checkedCount === this.form.checkList.length;
-      this.isIndeterminate =
-        checkedCount > 0 && checkedCount < this.form.checkList.length;
+      this.isIndeterminate = checkedCount != allCheckList.length;
     },
     // 更新
     handleUpdata(rows) {
@@ -577,7 +622,7 @@ export default {
       })
         .then(res => {
           if (res.status === 200) {
-            this.reloadPage();
+            this.getList();
             this.$message({
               type: "success",
               message: "更新用户成功"
@@ -603,7 +648,7 @@ export default {
           this.listLoading = true;
           deleteUser({ id: rows.id }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "删除用户成功"
@@ -640,7 +685,7 @@ export default {
           let idsStr = ids.join(",");
           deleteSelectUser({ ids: idsStr }).then(res => {
             if (res.status === 200) {
-              this.reloadPage();
+              this.getList();
               this.$message({
                 type: "success",
                 message: "批量删除用户成功"
@@ -657,15 +702,35 @@ export default {
           });
         });
     },
-    // 重载页面
-    reloadPage() {
-      if (JSON.stringify(this.paramsStorage) == "{}") {
-        this.list = this.getOrderList();
+
+    /* 移动端事件 */
+
+    // 获取数据
+    getMobileList() {
+      this.listLoading = true;
+      let searchList = [];
+      let modeStr;
+      let paramObj = {
+        contains:false,
+        page: this.mobileCurrentPage,
+        rows: this.pagesize
+      };
+      if (this.usefulMobileValue == "请选择") {
+        modeStr = "";
       } else {
-        let searchList = [];
-        getUserList(this.paramsStorage).then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
+        this.usefulOptions.forEach(item => {
+          if (item.label == this.usefulMobileValue) {
+            modeStr = item.value;
+          }
+        });
+      }
+      this.nameMobileValue != "" ? (paramObj.name = this.nameMobileValue) : "";
+      modeStr != "" ? (paramObj.mode = modeStr) : "";
+      getUserList(paramObj)
+        .then(res => {
+          this.listTotal = res.data.total;
+          const tableList = res.data.rows;
+          tableList.forEach(tableItem => {
             const { id, username, name, telephone, mode } = tableItem;
             const orderItem = {
               id: id,
@@ -677,24 +742,72 @@ export default {
             searchList.push(orderItem);
           });
           this.list = searchList;
+        })
+        .catch(error => {
+          console.log(error);
         });
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
+    },
+    // 搜索
+    handleSearchMobile() {
+      if (!this.mobileSearchShow) {
+        this.mobileSearchShow = !this.mobileSearchShow;
       }
     },
-
-    /* 移动端事件 */
-    //新增
-    handleSearchMobile() {},
-    //取消新增
-    handleAddMobileCancel() {},
-    //确认新增
-    handleMobileAdd() {},
-    //清空所选
-    handleSearchMobileClearAll() {},
-    //分页器改变
-    handlePageChange() {},
-    //返回列表
-    handleDetailCancel() {
-      this.mobileDetailShow = !this.mobileDetailShow;
+    // 取消搜索
+    handleSearchMobileCancel() {
+      if (this.mobileSearchShow) {
+        this.mobileSearchShow = !this.mobileSearchShow;
+      }
+    },
+    // 确认搜索
+    handleMobileSearch() {
+      this.mobileSearchButtonLoading = true;
+      this.getMobileList();
+      this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
+    },
+    // 清空所选
+    handleSearchMobileClearAll() {
+      this.nameMobileValue = "";
+      this.usefulMobileValue = "请选择";
+    },
+    // 分页器改变
+    handlePageChange() {
+      this.getMobileList();
+    },
+    // 限制页面跳转输入框只能输入数字
+    jumpPageInput() {
+      this.pageJumpIndex = this.pageJumpIndex.replace(/[^\d]/g, "");
+    },
+    // 跳转指定页面
+    handleJumpPage() {
+      let jumpPage = parseInt(this.pageJumpIndex);
+      if (jumpPage == this.mobileCurrentPage) return;
+      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
+        jumpPage = Math.ceil(this.listTotal / this.pagesize);
+      }
+      if (jumpPage < 1) {
+        jumpPage = 1;
+      }
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
+    },
+    // 是否可用
+    handleChooseUseful() {
+      if (!this.mobileUsefulPickerShow) {
+        this.mobileUsefulPickerShow = true;
+      }
+    },
+    // 确认是否可用
+    usefulPickerConfirm(res) {
+      if (this.mobileUsefulPickerShow) {
+        this.usefulMobileValue = res;
+        this.mobileUsefulPickerShow = !this.mobileUsefulPickerShow;
+      }
     }
   }
 };
@@ -745,5 +858,20 @@ export default {
   padding: 10px;
   width: 100%;
   box-shadow: 0 0 10px #e5e5e5;
+}
+
+.mobile-pagejump {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ebedf0;
+}
+
+.mobile-pagejump .pagejump-count {
+  font-size: 14px;
+  color: #323233;
+  padding-left: 10px;
+  width: 35%;
 }
 </style>
