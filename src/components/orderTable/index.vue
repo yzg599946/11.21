@@ -33,8 +33,10 @@
       </el-select>
       <el-select
         size="mini"
+        :loading="channelChangeLoading"
         class="table-input"
         v-model="channelValue"
+        @visible-change="channelVisibleChange"
         clearable
         filterable
         placeholder="渠道项目"
@@ -46,7 +48,15 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
+      <el-select
+        size="mini"
+        :loading="productChangeLoading"
+        v-model="productValue"
+        @visible-change="productVisibleChange"
+        clearable
+        filterable
+        placeholder="产品"
+      >
         <el-option
           v-for="item in productOptions"
           :key="item.value"
@@ -182,10 +192,18 @@
         icon="el-icon-upload2"
         @click="handleBatchImportIntoJD"
       >批量导入京东</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-refresh"
+        @click="handleRefresh"
+      >刷新</el-button>
     </div>
     <!-- 移动端 功能按钮 -->
     <div v-else class="filter-mobile">
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
+      <van-button type="info" size="small" @click="handleRefreshMobile">刷新</van-button>
     </div>
     <!-- 产品列表 -->
     <vxe-table
@@ -203,7 +221,7 @@
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column type="selection" width="30"></vxe-table-column>
+      <vxe-table-column v-if="device=='desktop'" type="selection" width="30"></vxe-table-column>
       <vxe-table-column field="id" title="id" align="center" width="80" show-overflow></vxe-table-column>
       <vxe-table-column field="channel" title="渠道项目" align="center" width="120" show-overflow></vxe-table-column>
       <vxe-table-column
@@ -616,7 +634,9 @@ import {
   getChannelList,
   getProductList,
   getColorList,
-  importJD
+  importJD,
+  getProductSelectList,
+  getChannelSelectList
 } from "@/api/orderList";
 import { setTimeout, clearTimeout } from "timers";
 import store from "@/store";
@@ -811,7 +831,9 @@ export default {
       searchButtonLoading: false,
       clearSearchButtonLoading: false,
       contains: false,
-      jdSelect: []
+      jdSelect: [],
+      productChangeLoading: false,
+      channelChangeLoading: false
     };
   },
   created() {
@@ -820,8 +842,8 @@ export default {
     window.addEventListener("resize", this.getHeight);
     this.getHeight();
     this.getSalesman();
-    this.getChannel();
-    this.getProduct();
+    // this.getChannel();
+    // this.getProduct();
     this.getColor();
   },
   destroyed() {
@@ -845,7 +867,16 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      console.log(this.timeSelectValue);
+      if (this.timeSelectValue == null) {
+        this.timeSelectValue = "";
+      } else {
+         if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
+      }
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
@@ -1169,7 +1200,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.channelValue = "";
       this.productValue = "";
@@ -1330,6 +1361,103 @@ export default {
         })
       ];
     },
+    // 刷新
+    handleRefresh() {
+      this.getList();
+    },
+    // 点击产品下拉框
+    productVisibleChange(res) {
+      if (res) {
+        this.productChangeLoading = true;
+        let paramsObj = { channel: this.category };
+         if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
+        this.timeSelectValue[0]
+          ? (paramsObj.createTime = this.timeSelectValue[0])
+          : "";
+        this.timeSelectValue[1]
+          ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+          : "";
+        this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+        this.minIdInput ? (paramsObj.id = this.minIdInput) : "";
+        this.maxIdInput ? (paramsObj.idEnd = this.maxIdInput) : "";
+        this.repeatOrderValue
+          ? (paramsObj.isRepeat = this.repeatOrderValue)
+          : "";
+        this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
+        this.nameInput ? (paramsObj.name = this.nameInput) : "";
+        this.productValue ? (paramsObj.productId = this.productValue) : "";
+        this.phoneNumberInput
+          ? (paramsObj.telephone = this.phoneNumberInput)
+          : "";
+        this.minPriceInput ? (paramsObj.totalCost = this.minPriceInput) : "";
+        this.maxPriceInput ? (paramsObj.totalCostEnd = this.maxPriceInput) : "";
+        if (this.salemanValue.length > 0) {
+          paramsObj.uids = this.salemanValue.join(",");
+        }
+        getProductSelectList(paramsObj, this.category).then(res => {
+          const tableList = res.data;
+          let productList = [];
+          tableList.forEach(tableItem => {
+            const { name, id } = tableItem;
+            const productItem = { label: name, value: id };
+            productList.push(productItem);
+          });
+          this.productOptions = productList;
+        });
+        this.productChangeLoading = false;
+      }
+    },
+    // 点击渠道下拉框
+    channelVisibleChange(res) {
+      if (res) {
+        this.channelChangeLoading = true;
+        let paramsObj = { channel: this.category };
+         if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
+        this.timeSelectValue[0]
+          ? (paramsObj.createTime = this.timeSelectValue[0])
+          : "";
+        this.timeSelectValue[1]
+          ? (paramsObj.createTimeEnd = this.timeSelectValue[1])
+          : "";
+        this.channelValue ? (paramsObj.cid = this.channelValue) : "";
+        this.minIdInput ? (paramsObj.id = this.minIdInput) : "";
+        this.maxIdInput ? (paramsObj.idEnd = this.maxIdInput) : "";
+        this.repeatOrderValue
+          ? (paramsObj.isRepeat = this.repeatOrderValue)
+          : "";
+        this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
+        this.nameInput ? (paramsObj.name = this.nameInput) : "";
+        this.productValue ? (paramsObj.productId = this.productValue) : "";
+        this.phoneNumberInput
+          ? (paramsObj.telephone = this.phoneNumberInput)
+          : "";
+        this.minPriceInput ? (paramsObj.totalCost = this.minPriceInput) : "";
+        this.maxPriceInput ? (paramsObj.totalCostEnd = this.maxPriceInput) : "";
+        if (this.salemanValue.length > 0) {
+          paramsObj.uids = this.salemanValue.join(",");
+        }
+        getChannelSelectList(paramsObj, this.category).then(res => {
+          console.log(res);
+          const tableList = res.data;
+          let channelList = [];
+          tableList.forEach(tableItem => {
+            const { name, id } = tableItem;
+            const channelItem = { label: name, value: id };
+            channelList.push(channelItem);
+          });
+          this.channelOptions = channelList;
+        });
+        this.channelChangeLoading = false;
+      }
+    },
 
     /* 移动端事件 */
 
@@ -1339,7 +1467,6 @@ export default {
       let timeStartValue = "";
       let timeEndValue = "";
       let productId = "";
-      let channelId = "";
       let uids = [];
       let repeatOrder = "";
       let usefulOrder = "";
@@ -1358,16 +1485,6 @@ export default {
         });
       } else {
         productId = "";
-      }
-
-      if (this.channelMobileValue != "请选择") {
-        this.channelOptions.forEach(channelItem => {
-          if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
-          }
-        });
-      } else {
-        channelId = "";
       }
 
       if (this.salesmanMobileValue != "请选择") {
@@ -1510,6 +1627,10 @@ export default {
       if (this.mobileSearchShow) {
         this.mobileSearchShow = false;
       }
+    },
+    // 刷新
+    handleRefreshMobile() {
+      this.getMobileList();
     },
     // 清空所选
     handleSearchMobileClearAll() {

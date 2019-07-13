@@ -258,7 +258,7 @@
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column type="selection" width="30"></vxe-table-column>
+      <vxe-table-column v-if="device=='desktop'" type="selection" width="30"></vxe-table-column>
       <vxe-table-column field="id" title="id" align="center" width="80" show-overflow></vxe-table-column>
       <vxe-table-column field="channel" title="渠道项目" align="center" width="120" show-overflow></vxe-table-column>
       <vxe-table-column
@@ -785,7 +785,11 @@ export default {
       this.listLoading = true;
       let searchList = [];
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: false,
         rows: this.pagesize,
@@ -944,7 +948,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.productValue = "";
       this.colorInput = "";

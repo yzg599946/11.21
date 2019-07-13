@@ -82,7 +82,7 @@
     </div>
     <!-- 新增页面 -->
     <el-dialog title="增加百度页面" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="页面ID" :label-width="formLabelWidth">
           <el-input v-model="form.pageId" clearable placeholder="请输入页面ID" class="normal-edit"></el-input>
         </el-form-item>
@@ -374,7 +374,7 @@ export default {
 }
 
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 

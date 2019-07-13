@@ -63,7 +63,7 @@
           type="danger"
           round
           size="mini"
-          :loading="verifycodeLoad"
+          :disabled="verifyButtonFlag"
           @click.native.prevent="handleGetVerifyCode"
         >{{verifyButtonText}}</el-button>
       </el-form-item>
@@ -128,7 +128,7 @@ export default {
       redirect: undefined,
       timecount: 60,
       verifyButtonText: "获取验证码",
-      verifycodeLoad: false
+      verifyButtonFlag: false
     };
   },
   watch: {
@@ -158,26 +158,32 @@ export default {
             .dispatch("user/login", this.loginForm)
             .then(() => {
               // this.$router.push({ path: this.redirect || "/" });
-              this.$router.push({ path : "/" });
+              this.$router.push({ path: "/" });
               this.loading = false;
             })
             .catch(() => {
               this.loading = false;
             });
         } else {
-          console.log("出错了!!");
+          this.$message.error("请输入登陆信息");
           return false;
         }
       });
     },
     handleGetVerifyCode() {
+      if (this.loginForm.username == "") {
+        this.$message.error("请先输入用户名");
+        return;
+      }
       getVerifyCode({ username: this.loginForm.username });
       this.time();
     },
     time() {
+      this.verifyButtonFlag = true;
       this.verifyButtonText = this.timecount + "秒后重新获取";
       this.timecount = this.timecount - 1;
       if (this.timecount == 0) {
+        this.verifyButtonFlag = false;
         this.verifyButtonText = "点击重新获取";
         this.timecount = 60;
         return;

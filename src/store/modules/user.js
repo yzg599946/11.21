@@ -1,9 +1,9 @@
-import { login, logout, getInfo } from '@/api/user'
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import { login, logout, getInfo, fastLogin } from '@/api/user'
+import { getToken, setToken, removeToken, setLoginState, removeLoginState } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
 const state = {
-  token: getToken('lht_admin_token'),
+  token: getToken(),
   name: '',
   avatar: '',
   roles: '',
@@ -39,9 +39,30 @@ const actions = {
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password, verification: verification }).then(response => {
         const { data } = response
-        console.log(`token${data}`)
-        commit('SET_TOKEN', data)
-        setToken(data)
+        const token = JSON.stringify(data)
+        commit('SET_TOKEN', token)
+        if (data.storage) {
+          setToken(token, true)
+        } else {
+          setToken(token, false)
+        }
+        setLoginState('isLogin')
+        resolve()
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  },
+
+  // fast login
+  fastLogin({ commit }) {
+    return new Promise((resolve, reject) => {
+      fastLogin().then(response => {
+        const { data } = response
+        const token = JSON.stringify(data)
+        commit('SET_TOKEN', token)
+        setToken(token, true)
+        setLoginState('isLogin')
         resolve()
       }).catch(error => {
         reject(error)
@@ -78,8 +99,13 @@ const actions = {
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
       logout(state.token).then(() => {
+        commit('SET_NAME', '')
+        commit('SET_AVATAR', '')
+        commit('SET_MENUS', '')
+        commit('SET_USERNAME', '')
         commit('SET_TOKEN', '')
         removeToken()
+        removeLoginState()
         resetRouter()
         resolve()
       }).catch(error => {
@@ -91,8 +117,8 @@ const actions = {
   // remove token
   resetToken({ commit }) {
     return new Promise(resolve => {
-      commit('SET_TOKEN', '')
       removeToken()
+      removeLoginState()
       resolve()
     })
   }

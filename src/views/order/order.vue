@@ -140,7 +140,7 @@
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column field="channel" title="项目渠道" align="center" width="120" show-overflow></vxe-table-column>
+      <vxe-table-column field="cpName" title="项目渠道" align="center" width="120" show-overflow></vxe-table-column>
       <vxe-table-column
         field="productName"
         title="产品名称"
@@ -150,22 +150,26 @@
         show-overflow
       ></vxe-table-column>
       <vxe-table-column field="name" title="名字" width="90" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="phoneNumber" title="手机" width="100" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="count" title="数量" width="60" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="price" title="总价" width="80" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="repeatOrder" title="重单" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="telephone" title="手机" width="100" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="num" title="数量" width="60" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="totalCost" title="总价" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column field="isRepeat" title="重单" width="60" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="address" title="详细地址" width="260" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="createTime" title="创建时间" width="150" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="remarks" title="备注" width="100" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="isUseful" title="是否可用" width="80" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column
-        field="logisticsState"
-        title="导入物流状态"
-        width="120"
-        align="center"
-        show-overflow
-      ></vxe-table-column>
-      <vxe-table-column field="salesman" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
+      <vxe-table-column title="是否可用" width="80" align="center" show-overflow>
+        <template v-slot="{row}">
+          <span v-if="row.mode == 0">可用</span>
+          <span v-else style="color:red">不可用</span>
+        </template>
+      </vxe-table-column>
+      <vxe-table-column title="导入物流状态" width="120" align="center" show-overflow>
+        <template v-slot="{row}">
+          <span v-if="row.isImport == 0">已导入</span>
+          <span v-else style="color:red">未导入</span>
+        </template>
+      </vxe-table-column>
+      <vxe-table-column field="username" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
       <vxe-table-column field="operator" title="操作员" width="80" align="center" show-overflow></vxe-table-column>
       <vxe-table-column
         field="nuclearOrderInterval"
@@ -554,10 +558,10 @@ export default {
       currentEditID: 0,
       listLoading: false,
       currentPage: 1, //当前页
-      mobileCurrentPage:1,
+      mobileCurrentPage: 1,
       pagesizes: [300, 500, 1000, 5000], //单页最大显示条数
       pagesize: 300, //单页内条数
-      listTotal:0,//总数
+      listTotal: 0, //总数
       salemanWidth: "",
       multipleSelection: [],
       clickFlag: null, // 单击定时器
@@ -604,19 +608,18 @@ export default {
       pageJumpIndex: 1,
       searchButtonLoading: false,
       clearSearchButtonLoading: false,
-      paramsStorage: {},
       contains: false
     };
   },
   created() {
     this.getList();
-    this.device = this.$store.state.app.device;
-    window.addEventListener("resize", this.getHeight);
     this.getHeight();
     this.getSalesman();
     this.getChannel();
     this.getProduct();
     this.getColor();
+    this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
   },
   destroyed() {
     window.removeEventListener("resize", this.getHeight);
@@ -637,7 +640,11 @@ export default {
       this.listLoading = true;
       let searchList = [];
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
@@ -663,52 +670,14 @@ export default {
       getAllOrderList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              cpName,
-              pid,
-              productName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              isRepeat,
-              address,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator
-            } = tableItem;
-            const orderItem = {
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              repeatOrder: isRepeat,
-              address: address,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
+          this.list = res.data.rows;
+          this.listLoading = false;
         })
         .catch(error => {
           console.log(error);
+          this.$message.error("获取数据时出错");
+          this.listLoading = false;
         });
-        setTimeout(() => {
-          this.listLoading =false;
-        }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -809,7 +778,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.channelValue = "";
       this.productValue = "";
@@ -846,7 +815,7 @@ export default {
           if (columnIndex === 1) {
             return "合计";
           }
-          if (["count", "price"].includes(column.property)) {
+          if (["num", "totalCost"].includes(column.property)) {
             return XEUtils.sum(data, column.property);
           }
           return "-";
@@ -957,66 +926,17 @@ export default {
       if (uids.length > 0) {
         paramsObj.uids = uids.join(",");
       }
-      getAllOrderList(this.paramsStorage)
+      getAllOrderList(this.paramsObj)
         .then(res => {
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              id,
-              cpName,
-              pid,
-              productName,
-              colorName,
-              username,
-              telephone,
-              totalCost,
-              pNum,
-              num,
-              price,
-              size,
-              isRepeat,
-              address,
-              createTime,
-              remark,
-              mode,
-              isImport,
-              name,
-              uid,
-              operator,
-              operatingTime
-            } = tableItem;
-            const orderItem = {
-              id: id,
-              channel: cpName,
-              pid: pid,
-              productName: productName,
-              color: colorName,
-              name: name,
-              phoneNumber: telephone,
-              count: num,
-              price: totalCost,
-              size: size,
-              repeatOrder: isRepeat,
-              address: address,
-              createTime: createTime,
-              remarks: remark,
-              isUseful: mode,
-              logisticsState: isImport,
-              salesman: username,
-              uid: uid,
-              operator: operator,
-              nuclearOrderInterval: operatingTime
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
+          this.listTotal = res.data.total;
+          this.list = res.data.rows;
+          this.listLoading = false;
         })
         .catch(error => {
           console.log(error);
+          this.$message.error("获取数据时出错");
+          this.listLoading = false;
         });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
     },
     // 分页器
     handlePageChange() {

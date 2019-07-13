@@ -115,6 +115,24 @@ export function getColorList(data) {
   })
 }
 
+// 产品下拉菜单
+export function getProductSelectList(data, category) {
+  return request({
+    url: `/admin/composite/product/${category}/list`,
+    method: 'post',
+    data
+  })
+}
+
+// 渠道下拉菜单
+export function getChannelSelectList(data, category) {
+  return request({
+    url: `/admin/composite/channel/${category}/parent`,
+    method: 'post',
+    data
+  })
+}
+
 /* 公共部分 end */
 
 /* 腾讯订单 start */

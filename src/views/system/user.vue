@@ -831,7 +831,7 @@ export default {
 }
 
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 

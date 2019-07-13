@@ -7,6 +7,7 @@ const getters = {
   username: state => state.user.username,
   roles: state => state.user.roles,
   menus: state => state.user.menus,
+  loginState: state => state.user.loginState,
   visitedViews: state => state.tagsView.visitedViews,
   cachedViews: state => state.tagsView.cachedViews,
   permission_routes: state => state.permission.routes

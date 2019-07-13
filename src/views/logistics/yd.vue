@@ -150,7 +150,7 @@
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column type="selection" width="30"></vxe-table-column>
+      <vxe-table-column v-if="device=='desktop'" type="selection" width="30"></vxe-table-column>
       <vxe-table-column
         field="logisticsNumber"
         title="物流单号"
@@ -683,7 +683,11 @@ export default {
         }
       });
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: false,
         rows: this.pagesize,
@@ -847,7 +851,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.channelValue = "";
       this.productValue = "";
@@ -880,7 +884,11 @@ export default {
         }
       });
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {};
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
@@ -935,7 +943,11 @@ export default {
         return;
       }
 
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = { senderName: "头条" };
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])

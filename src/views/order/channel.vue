@@ -153,7 +153,12 @@
     </div>
     <!-- PC端 渠道详情 -->
     <el-dialog size="mini" :title="channelTitle" :visible.sync="dialogTableVisible">
-      <el-table :max-height="tableMaxHeight - 200" size="mini" :data="gridData">
+      <el-table
+        :max-height="tableMaxHeight - 200"
+        size="mini"
+        :data="gridData"
+        v-loading="detailListLoading"
+      >
         <el-table-column property="timeslot" label="时段" width="400" align="center"></el-table-column>
         <el-table-column property="orderCount" label="订单数" width="400" align="center"></el-table-column>
       </el-table>
@@ -432,17 +437,18 @@ export default {
       pageJumpIndex: 1,
       contains: false,
       tableMaxHeight: 0,
-      timeslotLoading:true
+      timeslotLoading: true,
+      detailListLoading: false
     };
   },
   created() {
     this.getList();
-    this.device = this.$store.state.app.device;
-    window.addEventListener("resize", this.getHeight);
     this.getSalesman();
     this.getChannel();
     this.getProduct();
     this.getHeight();
+    this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
   },
   destroyed() {
     window.removeEventListener("resize", this.getHeight);
@@ -462,7 +468,11 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
@@ -551,7 +561,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.productValue = "";
       this.channelValue = "";
@@ -565,11 +575,16 @@ export default {
     },
     // 时段统计
     handleTimeSlot(row, column, cell, event) {
+      this.detailListLoading = true;
       this.gridData = [];
       this.channelTitle = row.channel;
       let paramsObj = { cpName: this.channelTitle };
       if (this.device == "desktop") {
+         if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
         this.timeSelectValue[0]
           ? (paramsObj.createTime = this.timeSelectValue[0])
           : "";
@@ -639,6 +654,7 @@ export default {
           };
           this.gridData.push(channelTimeObject);
         });
+        this.detailListLoading = false;
       });
       if (this.device == "mobile") {
         if (column.label == undefined) {
@@ -671,7 +687,7 @@ export default {
     /* 移动端事件 */
 
     // 获取数据
-    getMobileList(){
+    getMobileList() {
       this.listLoading = true;
       let timeStartValue = "";
       let timeEndValue = "";
@@ -739,7 +755,7 @@ export default {
       }
       getAllOrderChannel(paramsObj)
         .then(res => {
-          this.listTotal = res.data.total
+          this.listTotal = res.data.total;
           const tableData = res.data.rows;
           tableData.forEach(tableItem => {
             const { cpName, pNum } = tableItem;
@@ -751,9 +767,9 @@ export default {
         .catch(error => {
           console.log(error);
         });
-        setTimeout(() => {
-          this.listLoading = false;
-        }, 1000);
+      setTimeout(() => {
+        this.listLoading = false;
+      }, 1000);
     },
     // 点击搜索
     handleSearchMobile() {
@@ -906,7 +922,7 @@ export default {
     handleMobileSearch() {
       this.mobileSearchButtonLoading = true;
       this.getMobileList();
-      this.mobileSearchButtonLoading  = false;
+      this.mobileSearchButtonLoading = false;
       this.mobileSearchShow = false;
     },
     // 分页器
@@ -931,9 +947,9 @@ export default {
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-        this.pageJumpIndex = jumpPage;
-        this.mobileCurrentPage = jumpPage;
-        this.getMobileList();
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };
@@ -957,7 +973,7 @@ export default {
 }
 
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 

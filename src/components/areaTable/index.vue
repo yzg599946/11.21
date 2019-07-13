@@ -415,7 +415,11 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
@@ -509,7 +513,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.productValue = "";
       this.channelValue = "";
@@ -813,7 +817,7 @@ export default {
   font-size: 14px;
 }
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 .pagination {

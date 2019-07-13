@@ -30,3 +30,10 @@ export function getVerifyCode(data) {
     data
   })
 }
+
+export function fastLogin() {
+  return request({
+    url: '/fast/login',
+    method: 'post'
+  })
+}

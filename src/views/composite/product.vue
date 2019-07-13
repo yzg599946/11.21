@@ -111,7 +111,7 @@
     </div>
     <!-- 更新颜色 -->
     <el-dialog title="更新产品" :visible.sync="UpdateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="产品" :label-width="formLabelWidth">
           <el-input v-model="updateForm.name" clearable placeholder="请输入名称" class="normal-edit"></el-input>
         </el-form-item>
@@ -123,7 +123,7 @@
     </el-dialog>
     <!-- 新增产品 -->
     <el-dialog title="新增产品" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="产品" :label-width="formLabelWidth">
           <el-input v-model="form.productName" clearable placeholder="请输入名称" class="normal-edit"></el-input>
         </el-form-item>
@@ -622,7 +622,7 @@ export default {
 }
 
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 

@@ -204,7 +204,7 @@
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column type="selection" width="30"></vxe-table-column>
+      <vxe-table-column v-if="device=='desktop'" type="selection" width="30"></vxe-table-column>
       <vxe-table-column field="id" title="id" align="center" width="80" show-overflow></vxe-table-column>
       <vxe-table-column
         field="productName"
@@ -288,7 +288,7 @@
     </div>
     <!-- 编辑信息窗口 -->
     <el-dialog title="更新" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="产品型号" :label-width="formLabelWidth">
           <el-select v-model="form.productType" clearable filterable placeholder="请选择型号">
             <el-option
@@ -827,7 +827,11 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       let paramsObj = {
         contains: this.contains,
         rows: this.pagesize,
@@ -1129,7 +1133,7 @@ export default {
     },
     // 清空搜索项
     handleClearSearch() {
-      this.timeSelectValue = ["", ""];
+      this.timeSelectValue = "";
       this.salemanValue = [];
       this.channelValue = "";
       this.productValue = "";
@@ -1399,7 +1403,6 @@ export default {
       if (uids.length > 0) {
         paramsObj.uids = uids.join(",");
       }
-      this.paramsStorage = paramsObj;
       getTencentOrderList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;

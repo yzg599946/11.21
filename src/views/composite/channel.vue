@@ -120,7 +120,7 @@
     </div>
     <!-- 更新渠道 -->
     <el-dialog title="更新渠道" :visible.sync="UpdateDialogVisible">
-      <el-form :model="updateForm">
+      <el-form :model="updateForm" size="mini">
         <el-form-item label="id" :label-width="formLabelWidth">
           <el-input v-model="updateForm.id" clearable placeholder="请输入ID" class="normal-edit"></el-input>
         </el-form-item>
@@ -142,7 +142,7 @@
     </el-dialog>
     <!-- 新增渠道 -->
     <el-dialog title="新增渠道" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" size="mini">
         <el-form-item label="所属渠道" :label-width="formLabelWidth">
           <el-select v-model="form.parentChannel" clearable filterable placeholder="请选择所属渠道">
             <el-option
@@ -732,7 +732,7 @@ export default {
 }
 
 .table-input {
-  width: 120px;
+  width: 140px;
   padding: 5px 0;
 }
 

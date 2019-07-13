@@ -398,7 +398,11 @@ export default {
         rows: this.pagesize,
         page: this.currentPage
       };
-      this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+       if (this.timeSelectValue == null) {
+        this.timeSelectValue = ["", ""];
+      } else {
+        this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
+      }
       this.timeSelectValue[0]
         ? (paramsObj.createTime = this.timeSelectValue[0])
         : "";
