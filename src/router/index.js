@@ -32,8 +32,25 @@ import Layout from '@/layout'
  */
 export const constantRoutes = [
   {
+    path: '/redirect',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '/redirect/:path*',
+        component: () => import('@/views/redirect/index')
+      }
+    ]
+  },
+  {
     path: '/login',
     component: () => import('@/views/login/index'),
+    hidden: true
+  },
+
+  {
+    path: '/lock',
+    component: () => import('@/views/lock/index'),
     hidden: true
   },
 
@@ -71,7 +88,8 @@ export const errorRoutes = [
 const createRouter = () => new Router({
   // mode: 'history', // require service support
   scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes
+  routes: constantRoutes,
+  base: '/vue/'
 })
 
 const router = createRouter()
@@ -79,6 +97,7 @@ const router = createRouter()
 export function resetRouter() {
   const newRouter = createRouter()
   router.matcher = newRouter.matcher // reset router
+  router.options.routes = newRouter.options.routes
 }
 
 export default router

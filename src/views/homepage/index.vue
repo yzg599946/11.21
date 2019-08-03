@@ -1,12 +1,12 @@
 <template>
-  <div class="homepage-box">
+  <div class="homepage-box" :style="device=='desktop'?'display: flex;':''">
     <div class="homepage-image" v-if="device=='desktop'">
       <div>
         <img :src="url" />
       </div>
-      <div v-if="time && count" style="height:100%;">
+      <div style="height:100%;">
         <el-row :gutter="35">
-          <el-col v-if="time" :span="12">
+          <el-col :span="12">
             <el-table
               size="mini"
               max-height="200"
@@ -19,7 +19,7 @@
               <el-table-column prop="status" label="状态" width="100"></el-table-column>
             </el-table>
           </el-col>
-          <el-col v-if="count" :span="12">
+          <el-col :span="12">
             <el-table
               size="mini"
               max-height="200"
@@ -39,34 +39,42 @@
       <div style="display:flex;justify-content:center;margin-top:10px;">
         <img :src="mobileUrl" style="height:100%;width:100%;" />
       </div>
-      <div style="width:100%;display:flex;">
-        <div v-if="time" style="width:48%;">
-          <van-cell-group>
-            <van-cell size="mini" title="项目" value="状态" />
-            <van-cell
-              v-for="item in overtimeTableData"
-              :key="item.index"
-              size="mini"
-              :title="item.category"
-              value="有超时单"
-            />
-          </van-cell-group>
-        </div>
-        <div v-if="count" style="width:48%;">
-          <van-cell-group>
-            <van-cell size="mini" title="项目" value="状态" />
-            <van-cell
-              v-for="item in orderTableData"
-              :key="item.index"
-              size="mini"
-              :title="item.category"
-              value="有订单"
-            />
-          </van-cell-group>
-        </div>
+      <div style="display:flex;justify-content:space-around;position:relative;top:40px;">
+        <el-badge :value="overtimeTableData.length">
+          <el-button size="small" @click="handleGetTimeOut">超时单</el-button>
+        </el-badge>
+        <el-badge :value="orderTableData.length">
+          <el-button size="small" @click="handleGetOrder">订单</el-button>
+        </el-badge>
       </div>
+      <van-popup v-model="timeoutShow" style="width:70%">
+        <van-cell-group>
+          <van-cell size="mini" title="项目" value="状态" />
+          <van-cell
+            v-for="item in overtimeTableData"
+            :key="item.index"
+            size="mini"
+            :title="item.category"
+            value="有超时单"
+          />
+          <van-cell v-if="overtimeTableData.length==0" value="暂无数据" />
+        </van-cell-group>
+      </van-popup>
+      <van-popup v-model="orderShow" style="width:70%">
+        <van-cell-group>
+          <van-cell size="mini" title="项目" value="状态" />
+          <van-cell
+            v-for="item in orderTableData"
+            :key="item.index"
+            size="mini"
+            :title="item.category"
+            value="有订单"
+          />
+          <van-cell v-if="orderTableData.length==0" value="暂无数据" />
+        </van-cell-group>
+      </van-popup>
     </div>
-    <line-chart />
+    <line-chart v-show="device=='desktop'" />
   </div>
 </template>
 
@@ -74,12 +82,19 @@
 import LineChart from "./components/LineChart";
 import Vue from "vue";
 import { getOrderStatus, getOrderCount, getEchartData } from "@/api/homepage";
-import { Cell, CellGroup, Button } from "vant";
-import { Promise } from "q";
+import { setStore, getStore, removeStore } from "@/utils/store";
+import {
+  getSalesmanList,
+  getChannelList,
+  getProductList,
+  getColorList
+} from "@/api/orderList";
+import { Cell, CellGroup, Button, Popup } from "vant";
 
 Vue.use(Cell);
 Vue.use(CellGroup);
 Vue.use(Button);
+Vue.use(Popup);
 
 export default {
   components: {
@@ -87,18 +102,28 @@ export default {
   },
   data() {
     return {
-      url: "http://i2.tiimg.com/689844/30dbd702eea630e1.jpg",
-      mobileUrl: "http://i2.tiimg.com/689844/42d4066671c03058.png",
+      url:
+        "https://lhtpic01.oss-cn-shenzhen.aliyuncs.com/common/logo-large.jpg",
+      mobileUrl:
+        "https://lhtpic01.oss-cn-shenzhen.aliyuncs.com/common/logo-small.png",
       overtimeTableData: [],
       orderTableData: [],
       headerShow: true,
       device: "",
-      time: false,
-      count: false
+      salemanOptions: [],
+      channelOptions: [],
+      productOptions: [],
+      colorOptions: [],
+      timeoutShow: false,
+      orderShow: false
     };
   },
   created() {
     this.handleGetData();
+    this.getSalesman();
+    this.getChannel();
+    this.getProduct();
+    this.getColor();
     this.device = this.$store.state.app.device;
   },
   computed: {
@@ -113,36 +138,110 @@ export default {
   },
   methods: {
     handleGetData() {
-      //获取超时单信息
-      getOrderStatus().then(res => {
-        let statusdataList = [];
-        if (!res.data == "手表: 有超时单") {
-          const orderStatusList = res.data;
+      // 获取超时单信息
+      getOrderStatus()
+        .then(res => {
+          if (!res || !res.data) return;
+          let statusdataList = [];
+          const orderStatusList = res.data.split("<br>");
           orderStatusList.forEach(orderStatusItem => {
-            let data = { category: orderStatusItem, status: "有超时单" };
+            let dataArr = orderStatusItem.split(":");
+            let data = { category: dataArr[0], status: "有超时单" };
             statusdataList.push(data);
           });
-          this.time = true;
-        } else {
-          this.time = false;
-        }
-        this.overtimeTableData = statusdataList;
-      });
-      //获取订单信息
+          this.overtimeTableData = statusdataList;
+        })
+        .catch(error => {});
+      // 获取订单信息
       getOrderCount().then(res => {
+        if (!res || !res.data) return;
         let countdataList = [];
-        if (!res.data == "头条: 有单") {
-          const orderCountList = res.data;
-          orderCountList.forEach(orderCountItem => {
-            let data = { category: orderCountItem, status: "有订单" };
-            countdataList.push(data);
-          });
-          this.count = true;
-        } else {
-          this.count = false;
-        }
+        const orderCountList = res.data.split("<br>");
+        orderCountList.forEach(orderCountItem => {
+          let dataArr = orderCountItem.split(":");
+          let data = { category: dataArr[0], status: "有订单" };
+          countdataList.push(data);
+        });
         this.orderTableData = countdataList;
       });
+    },
+    // 获取业务员列表
+    getSalesman() {
+      getSalesmanList().then(res => {
+        const salesmanList = res.data;
+        salesmanList.forEach(salesmanItem => {
+          const salesmanObject = {
+            value: salesmanItem.id,
+            label: salesmanItem.name
+          };
+          this.salemanOptions.push(salesmanObject);
+        });
+        setStore({
+          name: "salesmanList",
+          content: JSON.stringify(this.salemanOptions)
+        });
+      });
+    },
+    // 获取渠道列表
+    getChannel() {
+      getChannelList().then(res => {
+        const channelList = res.data;
+        channelList.forEach(channelItem => {
+          const channelObject = {
+            value: channelItem.id,
+            label: channelItem.name
+          };
+          this.channelOptions.push(channelObject);
+        });
+        setStore({
+          name: "channelList",
+          content: JSON.stringify(this.channelOptions)
+        });
+      });
+    },
+    // 获取产品列表
+    getProduct() {
+      getProductList().then(res => {
+        const productList = res.data;
+        productList.forEach(productItem => {
+          const productObject = {
+            value: productItem.id,
+            label: productItem.name
+          };
+          this.productOptions.push(productObject);
+        });
+        setStore({
+          name: "productList",
+          content: JSON.stringify(this.productOptions)
+        });
+      });
+    },
+    // 获取颜色列表
+    getColor() {
+      if (!getStore({ name: "colorList" })) {
+        getColorList().then(res => {
+          const colorList = res.data;
+          colorList.forEach(colorItem => {
+            if (colorItem.name) {
+              const colorProject = {
+                value: colorItem.id,
+                label: colorItem.name
+              };
+              this.colorOptions.push(colorProject);
+            }
+          });
+          setStore({
+            name: "colorList",
+            content: JSON.stringify(this.colorOptions)
+          });
+        });
+      }
+    },
+    handleGetTimeOut() {
+      this.timeoutShow = true;
+    },
+    handleGetOrder() {
+      this.orderShow = true;
     }
   }
 };
@@ -150,7 +249,6 @@ export default {
 
 <style lang="scss" scoped>
 .homepage-box {
-  display: flex;
   flex-direction: column;
   justify-content: space-around;
   align-items: center;

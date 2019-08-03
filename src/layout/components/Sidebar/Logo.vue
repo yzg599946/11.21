@@ -2,20 +2,23 @@
   <div class="sidebar-logo-container" :class="{'collapse':collapse}">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo">
-        <h1 v-else class="sidebar-title">{{ title }} </h1>
+        <img :src="logo" class="sidebar-logo" />
+        <h1 v-if="device == 'desktop'" class="sidebar-title">{{ title }} </h1>
+        <h1 v-else class="sidebar-title">欢迎,{{ name }}</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo">
-        <h1 class="sidebar-title">{{ title }} </h1>
+        <img :src="logo" class="sidebar-logo" />
+        <h1 v-if="device == 'desktop'" class="sidebar-title">{{ title }} </h1>
+        <h1 v-else class="sidebar-title">欢迎,{{ name }}</h1>
       </router-link>
     </transition>
   </div>
 </template>
 
 <script>
+import { mapGetters } from "vuex";
 export default {
-  name: 'SidebarLogo',
+  name: "SidebarLogo",
   props: {
     collapse: {
       type: Boolean,
@@ -24,11 +27,14 @@ export default {
   },
   data() {
     return {
-      title: '隆辉腾管理系统',
-      logo: 'http://i2.tiimg.com/689844/ab38228fe53922ff.png'
-    }
-  }
-}
+      title: "隆辉腾管理系统",
+      logo: "https://lhtpic01.oss-cn-shenzhen.aliyuncs.com/common/logo.png",
+    };
+  },
+    computed: {
+    ...mapGetters(["name", "device"])
+  },
+};
 </script>
 
 <style lang="scss" scoped>

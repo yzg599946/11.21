@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
         type="datetimerange"
@@ -62,6 +62,7 @@
       :data="list"
       style="width: 100%;user-select:none;"
     >
+      <el-table-column type="index" width="50" align="center"></el-table-column>
       <el-table-column :show-overflow-tooltip="true" label="ID" prop="id" align="center" width="80">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
@@ -307,8 +308,12 @@ export default {
               );
               const end = new Date(
                 new Date().getFullYear(),
-                new Date().getMonth(),
-                1
+                new Date().getMonth() - 1,
+                new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  0
+                ).getDate()
               );
               picker.$emit("pick", [start, end]);
             }
@@ -398,7 +403,7 @@ export default {
         rows: this.pagesize,
         page: this.currentPage
       };
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -452,17 +457,23 @@ export default {
           });
           this.list = searchList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
     },
     //表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
     },
     //单击复制
     handleUseful(row, column, cell, event) {
@@ -521,9 +532,7 @@ export default {
     // 发送消息
     handleSendMessage(rows) {
       const id = rows.id;
-      sendWechatMessage({ id: id }).then(res => {
-        console.log(res);
-      });
+      sendWechatMessage({ id: id }).then(res => {});
     },
 
     /* 移动端事件 */
@@ -550,8 +559,8 @@ export default {
           miniProgramMobile = item.value;
         }
       });
-      timeStartValue !="" ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue !="" ? (paramsObj.createTimeEnd = timeEndValue) : "";
+      timeStartValue != "" ? (paramsObj.createTime = timeStartValue) : "";
+      timeEndValue != "" ? (paramsObj.createTimeEnd = timeEndValue) : "";
       miniProgramMobile != "" ? (paramsObj.state = miniProgramMobile) : "";
       this.nameMobileValue != "" ? (paramsObj.name = this.nameMobileValue) : "";
       this.phoneMobileValue != ""
@@ -596,9 +605,7 @@ export default {
           });
           this.list = searchList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
@@ -720,7 +727,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 .filter-container label {

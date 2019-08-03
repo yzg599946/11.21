@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 搜索 -->
-    <div v-if="device!='mobile'" class="filter-container">
+    <div ref="filterBox" v-if="device!='mobile'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
         type="datetimerange"
@@ -50,14 +50,15 @@
       v-loading="listLoading"
       fit
       border
+      @cell-click="handleUseful"
       :max-height="tableMaxHeight"
       :data="list"
       style="width: 100%;"
     >
+      <el-table-column type="index" width="50" align="center"></el-table-column>
       <el-table-column
         :show-overflow-tooltip="true"
         label="用户"
-        :width="device=='desktop'?'300':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -67,7 +68,6 @@
       <el-table-column
         :show-overflow-tooltip="true"
         label="ip地址"
-        :width="device=='desktop'?'300':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -77,7 +77,6 @@
       <el-table-column
         :show-overflow-tooltip="true"
         label="地址"
-        :width="device=='desktop'?'400':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -87,7 +86,6 @@
       <el-table-column
         :show-overflow-tooltip="true"
         label="登陆时间"
-        :width="device=='desktop'?'400':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -97,7 +95,6 @@
       <el-table-column
         :show-overflow-tooltip="true"
         label="登陆状态"
-        :width="device=='desktop'?'400':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -142,6 +139,12 @@
         @change="handlePageChange"
       />
     </div>
+    <input
+      id="copy_content"
+      type="text"
+      value
+      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
+    />
     <!-- 移动端 搜索界面 -->
     <div class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -232,7 +235,7 @@
 </template>
 
 <script>
-import { getLoginLog, getSalesmanList } from "@/api/orderList";
+import { getLoginLog, getSalesmanList, editLoginIp } from "@/api/orderList";
 import permission from "@/directive/permission/index.js"; // 权限判断指令
 import Vue from "vue";
 import {
@@ -283,8 +286,12 @@ export default {
               );
               const end = new Date(
                 new Date().getFullYear(),
-                new Date().getMonth(),
-                1
+                new Date().getMonth() - 1,
+                new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  0
+                ).getDate()
               );
               picker.$emit("pick", [start, end]);
             }
@@ -330,8 +337,12 @@ export default {
   created() {
     this.getList();
     this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
     this.getSalesman();
     this.getHeight();
+  },
+  destroyed() {
+    window.removeEventListener("resize", this.getHeight);
   },
   computed: {
     deviceVal() {
@@ -348,7 +359,7 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -398,14 +409,50 @@ export default {
             label: salesmanItem.name
           };
           this.salemanOptions.push(salesmanObject);
-          this.salesmanColumns.push(salesmanItem.name);
+          this.salesmanColumns.push(salesmanItem.label);
         });
       });
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
+    },
+    // 单击复制
+    handleUseful(row, column, cell, event) {
+      if (this.device == "mobile") return;
+      if (this.clickFlag) {
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "操作") {
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
     },
     //表格页面总数改变
     handleSizeChange(val) {
@@ -650,7 +697,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

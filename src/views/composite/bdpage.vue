@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能菜单 -->
-    <div v-if="device!='mobile'" class="filter-container">
+    <div ref="filterBox" v-if="device!='mobile'" class="filter-container">
       <el-button
         size="mini"
         class="filter-item"
@@ -22,22 +22,22 @@
       :data="list"
       style="width: 100%;"
     >
-      <el-table-column label="页面" :width="device=='desktop'?'400':'100'" align="center">
+      <el-table-column label="页面" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.page }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户" :width="device=='desktop'?'400':'100'" align="center">
+      <el-table-column label="用户" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.account }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="产品" :width="device=='desktop'?'400':'100'" align="center">
+      <el-table-column label="产品" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.product }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="价格" :width="device=='desktop'?'400':'100'" align="center">
+      <el-table-column label="价格" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.price }}</span>
         </template>
@@ -258,8 +258,16 @@ export default {
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 88 + 10);
+        }
+      });
     },
     // 选择表格尺寸
     handleSizeChange(val) {
@@ -374,7 +382,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

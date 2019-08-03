@@ -31,9 +31,32 @@ export function getVerifyCode(data) {
   })
 }
 
-export function fastLogin() {
+// export function fastLogin() {
+//   return request({
+//     url: '/fast/login',
+//     method: 'post'
+//   })
+// }
+
+export function checkLogin(data) {
   return request({
-    url: '/fast/login',
-    method: 'post'
+    url: '/user/check',
+    method: 'post',
+    data
+  })
+}
+
+export function markingRun() {
+  return request({
+    url: '/marking/run',
+    method: 'get'
+  })
+}
+
+export function sina() {
+  return request({
+    url: '/list=sz002307,sh600928',
+    method: 'get',
+    baseURL: 'http://hq.sinajs.cn'
   })
 }

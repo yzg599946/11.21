@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="产品名称" v-model="nameInput" clearable></el-input>
       <el-button
         size="mini"
@@ -39,7 +39,6 @@
       :loading="listLoading"
       @cell-click="handleUseful"
       border
-      highlight-hover-row
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
@@ -54,7 +53,13 @@
       ></vxe-table-column>
       <vxe-table-column title="商品主图" sortable align="center" width="120" show-overflow>
         <template v-slot="{ row }">
-          <img style="width: 100px; height: 100px" :src="row.productMainImageUrl" />
+          <div style="height:100px">
+            <el-image fit="cover" :src="row.productMainImageUrl" lazy>
+              <div slot="error" class="image-slot">
+                <i class="el-icon-picture-outline"></i>
+              </div>
+            </el-image>
+          </div>
         </template>
       </vxe-table-column>
       <vxe-table-column field="minPrice" title="最低价格" width="90" align="center" show-overflow></vxe-table-column>
@@ -345,8 +350,16 @@ export default {
     },
     //表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
     },
     //单击复制
     handleUseful(row, column, cell, event) {
@@ -408,13 +421,9 @@ export default {
       this.dialogVisible = false;
     },
     // 选择文件
-    handlePreview(file) {
-      console.log(file);
-    },
+    handlePreview(file) {},
     // 移除选择
-    handleRemove(file, fileList) {
-      console.log(file, fileList);
-    },
+    handleRemove(file, fileList) {},
     // 关闭
     handleClose() {
       this.dialogVisible = false;
@@ -559,7 +568,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 .filter-container label {

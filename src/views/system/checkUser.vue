@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 搜索 -->
-    <div v-if="device!='mobile'" class="filter-container">
+    <div ref="filterBox" v-if="device!='mobile'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
         type="datetimerange"
@@ -21,34 +21,65 @@
         :loading="searchButtonLoading"
         @click="handleSearch"
       >搜索</el-button>
+      <el-button
+        size="mini"
+        class="filter-item"
+        type="primary"
+        icon="el-icon-edit"
+        @click="handleEditIp"
+      >修改客服登陆ip</el-button>
     </div>
     <!-- 移动端 搜索 -->
     <div v-else class="filter-mobile">
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
     </div>
     <!-- 列表 -->
-    <el-table v-loading="listLoading" size="mini" border fit :data="list" style="width: 100%;">
-      <el-table-column label="用户名" :width="device=='desktop'?'500':'100'" align="center">
+    <el-table
+      v-loading="listLoading"
+      @cell-click="handleCheckUser"
+      size="mini"
+      border
+      fit
+      :data="list"
+      :max-height="tableMaxHeight"
+      style="width: 100%;"
+    >
+      <el-table-column type="index" width="50" align="center"></el-table-column>
+      <el-table-column label="用户名" align="center" show-overflow-tooltip>
         <template slot-scope="scope">
           <span>{{ scope.row.username }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="登陆状态" :width="device=='desktop'?'500':'100'" align="center">
+      <el-table-column label="登陆状态" align="center" show-overflow-tooltip>
         <template slot-scope="scope">
-          <span>{{ scope.row.loginStatus }}</span>
+          <span
+            :style="scope.row.loginStatus == '0' ? 'color:red;cursor:pointer;':'cursor:pointer;'"
+          >{{ scope.row.loginStatus == '0' ? '未确认':'已确认' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="确认人" :width="device=='desktop'?'500':'100'" align="center">
+      <el-table-column label="确认人" align="center" show-overflow-tooltip>
         <template slot-scope="scope">
           <span>{{ scope.row.Confirmor }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="申请时间" :width="device=='desktop'?'500':'100'" align="center">
+      <el-table-column label="申请时间" align="center" show-overflow-tooltip>
         <template slot-scope="scope">
           <span>{{ scope.row.applicationTime }}</span>
         </template>
       </el-table-column>
     </el-table>
+    <!-- 修改ip窗口 -->
+    <el-dialog title="修改客服ip" :visible.sync="dialogFormVisible">
+      <el-form :model="form">
+        <el-form-item label="ip地址" :label-width="formLabelWidth">
+          <el-input v-model="form.ip" autocomplete="off" size="mini"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleEditIpConfirm">确 定</el-button>
+      </div>
+    </el-dialog>
     <!-- PC端 分页器 -->
     <el-pagination
       v-if="device!='mobile'"
@@ -86,6 +117,12 @@
         @change="handlePageChange"
       />
     </div>
+    <input
+      id="copy_content"
+      type="text"
+      value
+      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
+    />
     <!-- 移动端 搜索界面 -->
     <div class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -142,7 +179,7 @@
 <script>
 import Vue from "vue";
 import permission from "@/directive/permission/index.js"; // 权限判断指令
-import { getCheckLoginList } from "@/api/orderList";
+import { getCheckLoginList, checkLogin } from "@/api/orderList";
 import {
   Pagination,
   Button,
@@ -191,8 +228,12 @@ export default {
               );
               const end = new Date(
                 new Date().getFullYear(),
-                new Date().getMonth(),
-                1
+                new Date().getMonth() - 1,
+                new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  0
+                ).getDate()
               );
               picker.$emit("pick", [start, end]);
             }
@@ -222,13 +263,21 @@ export default {
       minDateEnd: new Date(),
       maxDateStart: new Date(),
       searchButtonLoading: false,
-      pageJumpIndex: 1
+      pageJumpIndex: 1,
+      dialogFormVisible: false,
+      form: {
+        ip: ""
+      }
     };
   },
   created() {
     this.getList();
     this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
     this.getHeight();
+  },
+  destroyed() {
+    window.removeEventListener("resize", this.getHeight);
   },
   computed: {
     deviceVal() {
@@ -245,7 +294,7 @@ export default {
     getList() {
       this.listLoading = true;
       let searchList = [];
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -265,12 +314,13 @@ export default {
         this.listTotal = res.data.total;
         const tableList = res.data.rows;
         tableList.forEach(tableItem => {
-          const { username, status, checkName, createTime } = tableItem;
+          const { username, status, checkName, createTime, id } = tableItem;
           const searchItem = {
             username: username,
             loginStatus: status,
             Confirmor: checkName,
-            applicationTime: createTime
+            applicationTime: createTime,
+            id: id
           };
           searchList.push(searchItem);
         });
@@ -282,8 +332,16 @@ export default {
     },
     //表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
     },
     handleSizeChange(val) {
       this.pagesize = val;
@@ -299,6 +357,81 @@ export default {
       this.searchButtonLoading = true;
       this.getList();
       this.searchButtonLoading = false;
+    },
+    //确认登陆
+    handleCheckUser(row, column, cell, event) {
+      if (column.label === "登陆状态" && row.loginStatus === 0) {
+        checkLogin({ id: row.id }).then(res => {
+          if (res.status == 200) {
+            this.$message({
+              type: "success",
+              message: "确认成功"
+            });
+            this.getList();
+          } else {
+            this.$message.error(res.msg);
+          }
+        });
+      }
+      if (this.device == "mobile") return;
+      if (this.clickFlag) {
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "登陆状态") {
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
+    },
+    // 修改ip
+    handleEditIp() {
+      this.dialogFormVisible = true;
+    },
+    // 确认修改ip
+    handleEditIpConfirm() {
+      if (this.form.ip === "") {
+        this.$message.error("请输入ip地址");
+        return;
+      } else {
+        var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+        if (!reg.test(this.form.ip)) {
+          this.$message.error("请输入正确的ip地址");
+        } else {
+          editLoginIp({ ip: this.form.ip })
+            .then(res => {
+              if (res.status == 200) {
+                this.$message({
+                  type: "success",
+                  message: "修改成功"
+                });
+                this.dialogFormVisible = false;
+              } else {
+                this.$message.error(res.msg || "修改失败");
+                this.dialogFormVisible = false;
+              }
+            })
+            .catch(error => {
+              this.$message.error(error || "error");
+              this.dialogFormVisible = false;
+            });
+        }
+      }
     },
 
     /* 移动端事件 */
@@ -425,9 +558,9 @@ export default {
       if (jumpPage < 1) {
         jumpPage = 1;
       }
-        this.pageJumpIndex = jumpPage;
-        this.mobileCurrentPage = jumpPage;
-        this.getMobileList();
+      this.pageJumpIndex = jumpPage;
+      this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
     }
   }
 };
@@ -451,7 +584,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

@@ -18,7 +18,6 @@ import router from './router'
 import '@/icons' // icon
 import '@/permission' // permission control
 
-import 'el-bigdata-table'
 import 'element-ui/lib/theme-chalk/index.css'
 
 Vue.use(VXETable)

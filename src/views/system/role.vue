@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" v-if="device=='desktop'">
     <!-- PC端 功能按钮 -->
     <div v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="角色名" v-model="usernameInput" clearable></el-input>
@@ -37,17 +37,18 @@
       v-loading="listLoading"
       fit
       border
+      @cell-click="handleUseful"
       @selection-change="handleSelectionChange"
       :max-height="tableMaxHeight"
       :data="list"
       style="width: 100%;"
     >
-      <el-table-column label="id" :width="100" align="center">
+      <el-table-column label="id" width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="角色名" :width="device=='desktop'?'800':'250'" align="center">
+      <el-table-column label="角色名" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
@@ -56,21 +57,22 @@
       <el-table-column
         v-if="device=='desktop' && checkPermission(['system-role-list-update','system-role-list-delete'])"
         label="操作"
-        :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
           <el-button
             v-permission="['system-role-list-update']"
             @click="handleUpdata(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >更新</el-button>
           <el-button
             v-permission="['system-role-list-delete']"
             @click="handleDelete(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >删除</el-button>
         </template>
       </el-table-column>
@@ -108,7 +110,9 @@
             :data="updateTreeData"
             :default-checked-keys="updateForm.checkList"
             show-checkbox
+            accordion
             node-key="id"
+            :check-strictly="true"
             :props="defaultProps"
             @check="handleUpdatePermisionCheck"
           ></el-tree>
@@ -156,6 +160,12 @@
         @change="handlePageChange"
       />
     </div>
+    <input
+      id="copy_content"
+      type="text"
+      value
+      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
+    />
     <!-- 移动端 搜索界面 -->
     <div class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -190,6 +200,16 @@
         </div>
       </van-popup>
     </div>
+  </div>
+  <div v-else class="app-container">
+    <el-alert
+      title="移动端无法访问"
+      description="请在PC端再使用此功能"
+      type="warning"
+      effect="dark"
+      show-icon
+      :closable="false"
+    ></el-alert>
   </div>
 </template>
 
@@ -296,8 +316,8 @@ export default {
     };
   },
   created() {
+        this.device = this.$store.state.app.device;
     this.getList();
-    this.device = this.$store.state.app.device;
     this.getHeight();
   },
   computed: {
@@ -339,8 +359,37 @@ export default {
     },
     //表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
+      let otherHeight = this.device == "desktop" ? 316 : 200;
       this.tableMaxHeight = window.innerHeight - otherHeight;
+      console.log(otherHeight)
+    },
+    // 单击复制
+    handleUseful(row, column, cell, event) {
+      if (this.device == "mobile") return;
+      if (this.clickFlag) {
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "操作") {
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
     },
     // 页面条数切换
     handleSizeChange(val) {
@@ -402,9 +451,7 @@ export default {
             this.$message.error("添加失败");
           }
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       this.listLoading = false;
       this.addDialogVisible = false;
     },
@@ -539,7 +586,6 @@ export default {
       };
       this.nameMobileValue ? (paramObj.name = this.nameMobileValue) : "";
       getRoleList(paramObj).then(res => {
-        console.log(res)
         this.listTotal = res.data.total;
         const tableList = res.data.rows;
         tableList.forEach(tableItem => {
@@ -623,7 +669,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

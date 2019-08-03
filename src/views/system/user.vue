@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div v-if="device=='desktop'" class="app-container">
     <!-- PC端 功能按钮 -->
     <div v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="用户名" v-model="usernameInput" clearable></el-input>
@@ -45,33 +45,34 @@
       v-loading="listLoading"
       fit
       border
+      @cell-click="handleUseful"
       @selection-change="handleSelectionChange"
       :max-height="tableMaxHeight"
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       style="width: 100%;"
     >
-      <el-table-column v-if="device=='desktop'" fixed type="selection" width="60" align="center"></el-table-column>
-      <el-table-column label="id" :width="100" align="center">
+      <el-table-column v-if="device=='desktop'" type="selection" width="60" align="center"></el-table-column>
+      <el-table-column label="id" width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户名" :width="200" align="center">
+      <el-table-column label="用户名" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.username }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="姓名" :width="200" align="center">
+      <el-table-column label="姓名" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="手机号码" :width="200" align="center">
+      <el-table-column label="手机号码" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.phoneNumber }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否可用" :width="200" align="center">
+      <el-table-column label="是否可用" align="center">
         <template slot-scope="scope">
           <span :style="scope.row.isUseful==1?'':'color:red'">{{ scope.row.isUseful==1?'可用':'不可用' }}</span>
         </template>
@@ -79,21 +80,22 @@
       <el-table-column
         v-if="device=='desktop'&& checkPermission(['system-user-list-update','system-user-list-delete'])"
         label="操作"
-        :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
           <el-button
             v-permission="['system-user-list-update']"
             @click="handleUpdata(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >更新</el-button>
           <el-button
             v-permission="['system-user-list-delete']"
             @click="handleDelete(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >删除</el-button>
         </template>
       </el-table-column>
@@ -208,7 +210,7 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
@@ -236,6 +238,12 @@
         @change="handlePageChange"
       />
     </div>
+    <input
+      id="copy_content"
+      type="text"
+      value
+      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
+    />
     <!-- 移动端 搜索界面 -->
     <div class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -280,6 +288,16 @@
         </div>
       </van-popup>
     </div>
+  </div>
+    <div v-else class="app-container">
+    <el-alert
+      title="移动端无法访问"
+      description="请在PC端再使用此功能"
+      type="warning"
+      effect="dark"
+      show-icon
+      :closable="false"
+    ></el-alert>
   </div>
 </template>
 
@@ -411,7 +429,7 @@ export default {
       let name = this.usernameInput;
       let isUseful = this.usefulValue;
       let paramObj = {
-        contains:false,
+        contains: false,
         page: this.currentPage,
         rows: this.pagesize
       };
@@ -421,7 +439,6 @@ export default {
         .then(res => {
           this.listTotal = res.data.total;
           const tableList = res.data.rows;
-          console.log(res)
           tableList.forEach(tableItem => {
             const { id, username, name, telephone, mode } = tableItem;
             const orderItem = {
@@ -434,18 +451,44 @@ export default {
             searchList.push(orderItem);
           });
           this.list = searchList;
+          this.listLoading = false;
         })
         .catch(error => {
-          console.log(error);
+          this.listLoading = false;
         });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
     },
-    //表格高度自适应
+    // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
+      let otherHeight = this.device == "desktop" ? 316 : 200;
       this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
+    // 单击复制
+    handleUseful(row, column, cell, event) {
+      if (this.device == "mobile") return;
+      if (this.clickFlag) {
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "操作") {
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
     },
     // 页面条数切换
     handleSizeChange(val) {
@@ -531,7 +574,6 @@ export default {
           }
         })
         .catch(error => {
-          console.log(error);
         });
       this.listLoading = false;
       this.addDialogVisible = false;
@@ -558,7 +600,6 @@ export default {
     // 更新
     handleUpdata(rows) {
       updateUserInquired({ id: rows.id }).then(res => {
-        console.log(res.data);
         this.updatePermissionList = res.data.roleList;
         this.updateForm.checkList = res.data.roles;
         this.updateForm.username = res.data.user.username;
@@ -632,7 +673,6 @@ export default {
           }
         })
         .catch(error => {
-          console.log(error);
         });
       this.listLoading = false;
       this.updateDialogVisible = false;
@@ -711,7 +751,7 @@ export default {
       let searchList = [];
       let modeStr;
       let paramObj = {
-        contains:false,
+        contains: false,
         page: this.mobileCurrentPage,
         rows: this.pagesize
       };
@@ -744,7 +784,6 @@ export default {
           this.list = searchList;
         })
         .catch(error => {
-          console.log(error);
         });
       setTimeout(() => {
         this.listLoading = false;
@@ -831,7 +870,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

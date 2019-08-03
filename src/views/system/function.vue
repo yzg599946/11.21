@@ -35,31 +35,33 @@
           :data="list"
           style="width: 100%;user-select:none;"
         >
-          <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
           <el-table-column type="index" width="50" align="center"></el-table-column>
-          <el-table-column label="功能名称" :width="500" align="center">
+          <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
+          <el-table-column label="功能名称" align="center">
             <template slot-scope="scope">
               <span>{{ scope.row.name }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="标识码" :width="500" align="center">
+          <el-table-column label="标识码" align="center">
             <template slot-scope="scope">
               <span>{{ scope.row.code }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" :width="300" align="center">
+          <el-table-column label="操作" align="center">
             <template slot-scope="scope">
               <el-button
                 v-permission="['system-function-list-update']"
                 @click="handleUpdateClick(scope.row)"
-                type="text"
-                size="small"
+                type="primary"
+                size="mini"
+                plain
               >更新</el-button>
               <el-button
                 v-permission="['system-function-list-delete']"
                 @click="handleDeleteClick(scope.row)"
-                type="text"
-                size="small"
+                type="primary"
+                size="mini"
+                plain
               >删除</el-button>
             </template>
           </el-table-column>
@@ -188,7 +190,14 @@
     </el-container>
   </div>
   <div v-else class="app-container">
-    <el-alert title="移动端无法访问" description="请在PC端再使用此功能" type="warning" effect="dark" show-icon :closable='false'></el-alert>
+    <el-alert
+      title="移动端无法访问"
+      description="请在PC端再使用此功能"
+      type="warning"
+      effect="dark"
+      show-icon
+      :closable="false"
+    ></el-alert>
   </div>
 </template>
 
@@ -201,6 +210,7 @@ import { Pagination } from "vant";
 import {
   getMenuTree,
   getFunctionList,
+  getMenuList,
   addFunction,
   updateFunction,
   deleteFunction,
@@ -223,8 +233,8 @@ export default {
       addDialogVisible: false,
       updateDialogVisible: false,
       currentPage: 1, //当前页
-      pagesizes: [20, 40, 60, 80, 100], //单页最大显示条数
-      pagesize: 20, //单页内条数
+      pagesizes: [25, 50, 100], //单页最大显示条数
+      pagesize: 50, //单页内条数
       listTotal: 0, //总数
       clickFlag: null, // 单击定时器
       mobileSearchShow: false,
@@ -283,7 +293,6 @@ export default {
     getTreeData() {
       getMenuTree().then(res => {
         if ((res.status = 200)) {
-          console.log(res.data);
           this.treeData = res.data;
         }
       });
@@ -292,7 +301,6 @@ export default {
     getList() {
       let orderList = [];
       this.listLoading = true;
-      console.log(this.id);
       getFunctionList(
         { page: this.currentPage, rows: this.pagesize },
         this.id
@@ -311,16 +319,14 @@ export default {
         });
         this.list = orderList;
       });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
+      this.listLoading = false;
     },
-    //表格高度自适应
+    // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
+      let otherHeight = this.device == "desktop" ? 316 : 200;
       this.tableMaxHeight = window.innerHeight - otherHeight;
     },
-    //单击复制
+    // 单击复制
     handleUseful(row, column, cell, event) {
       if (this.device == "mobile") return;
       if (this.clickFlag) {
@@ -348,12 +354,12 @@ export default {
         }
       }, 300);
     },
-    //选择表格尺寸
+    // 选择表格尺寸
     handleSizeChange(val) {
       this.pagesize = val;
       this.getList();
     },
-    //选择表格当前页数
+    // 选择表格当前页数
     handleCurrentChange(val) {
       this.currentPage = val;
       this.getList();
@@ -397,9 +403,9 @@ export default {
             type: "success",
             message: "新增权限成功"
           });
+          this.getList();
         }
       });
-
       this.addDialogVisible = false;
     },
     // 关联菜单改变
@@ -422,7 +428,6 @@ export default {
     },
     // 验证更新
     updateVerify() {
-      console.log(this.updateForm.name);
       if (this.updateForm.name == "") {
         this.$message.error("请输入功能名称");
         return false;
@@ -447,6 +452,7 @@ export default {
             message: "更新成功",
             type: "succes"
           });
+          this.getList();
         }
       });
       this.updateDialogVisible = false;
@@ -468,10 +474,8 @@ export default {
                 type: "success",
                 message: "删除权限成功"
               });
-              this.dialogTableVisible = false;
             } else {
               this.$message.error("删除失败");
-              this.dialogTableVisible = false;
             }
           });
           this.listLoading = false;
@@ -481,8 +485,9 @@ export default {
             type: "info",
             message: "已取消删除"
           });
-          this.dialogTableVisible = false;
         });
+      this.getList();
+      this.dialogTableVisible = false;
     },
     // 批量删除
     handleDeleteSelect() {
@@ -519,12 +524,12 @@ export default {
             message: "已取消删除"
           });
         });
+        this.getList();
     },
     // 树形图节点点击事件
     handleNodeClick(e) {
       this.currentId = e.functionId;
       this.id = `?id=${e.id}`;
-      console.log(this.id);
       this.getList();
     },
     // 选择发生改变
@@ -572,7 +577,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 .filter-container label {

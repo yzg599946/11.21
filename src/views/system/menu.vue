@@ -61,48 +61,51 @@
       size="mini"
       border
       fit
-      :data="list.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="list"
       :max-height="tableMaxHeight"
+      @cell-click="handleUseful"
       @row-dblclick="handleChildrenMenu"
       @selection-change="handleSelectionChange"
       style="width: 100%;"
     >
-      <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
       <el-table-column type="index" width="50" align="center"></el-table-column>
-      <el-table-column label="名称" :width="200" align="center">
+      <el-table-column fixed type="selection" width="60" align="center"></el-table-column>
+      <el-table-column label="名称" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="链接地址" :width="200" align="center">
+      <el-table-column label="链接地址" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.linkAddress }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否可用" :width="200" align="center">
+      <el-table-column label="是否可用" align="center">
         <template slot-scope="scope">
           <span :style="scope.row.isUseful==1?'':'color:red'">{{ scope.row.isUseful==1?'可用':'不可用' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="排序" :width="300" align="center">
+      <el-table-column label="排序" align="center">
         <template slot-scope="scope">
-          <el-button @click="handleMoveUpClick(scope.row)" type="text" size="small">上移</el-button>
-          <el-button @click="handleMoveDownClick(scope.row)" type="text" size="small">下移</el-button>
+          <el-button @click="handleMoveUpClick(scope.row)" type="primary" size="mini" plain>上移</el-button>
+          <el-button @click="handleMoveDownClick(scope.row)" type="primary" size="mini" plain>下移</el-button>
         </template>
       </el-table-column>
-      <el-table-column label="操作" :width="300" align="center">
+      <el-table-column label="操作" align="center">
         <template slot-scope="scope">
           <el-button
             v-permission="['system-menu-list-update']"
             @click="handleUpdateClick(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >更新</el-button>
           <el-button
             v-permission="['system-menu-list-delete']"
             @click="handleDeleteClick(scope.row)"
-            type="text"
-            size="small"
+            type="primary"
+            size="mini"
+            plain
           >删除</el-button>
         </template>
       </el-table-column>
@@ -233,20 +236,26 @@
       :page-sizes="pagesizes"
       :page-size="pagesize"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="list.length"
+      :total="listTotal"
       class="pagination"
     ></el-pagination>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <van-pagination
-        v-model="currentPage"
-        :total-items="list.length"
+        v-model="mobileCurrentPage"
+        :total-items="listTotal"
         :items-per-page="pagesize"
         :show-page-size="3"
         force-ellipses
         @change="handlePageChange"
       />
     </div>
+    <input
+      id="copy_content"
+      type="text"
+      value
+      style="position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;"
+    />
     <!-- 移动端 搜索界面 -->
     <div class="search-container">
       <van-popup v-model="mobileSearchShow" position="right">
@@ -372,16 +381,16 @@ export default {
         englishName: ""
       },
       updateId: "",
-      childrenParamsStorage: {},
       multipleSelection: [],
-      returnButton: false
+      returnButton: false,
+      childrenMenuRow: {}
     };
   },
   created() {
     this.getList();
     this.device = this.$store.state.app.device;
     this.getHeight();
-    this.getParentMenuList();
+    // this.getParentMenuList();
   },
   computed: {
     deviceVal() {
@@ -397,35 +406,45 @@ export default {
     // 获取数据
     getList() {
       this.listLoading = true;
-      let name = this.nameInput;
-      let uri = this.linkInput;
-      let paramsObj = {
-        contains: false,
-        page: this.currentPage,
-        rows: this.pagesize
-      };
-      name != "" ? (paramsObj.name = name) : "";
-      uri != "" ? (paramsObj.uri = uri) : "";
-      let orderList = [];
-      getMenuList(paramsObj).then(res => {
-        this.listTotal = res.data.total;
-        let tableList = res.data.rows;
-        tableList.forEach(tableItem => {
-          const { name, uri, mode, sort, id } = tableItem;
-          const orderItem = {
-            name: name,
-            linkAddress: uri,
-            isUseful: mode,
-            sort: sort,
-            id: id
-          };
-          orderList.push(orderItem);
+      if (this.returnButton) {
+        this.handleChildrenMenu(this.childrenMenuRow);
+      } else {
+        let name = this.nameInput;
+        let uri = this.linkInput;
+        let paramsObj = {
+          contains: false,
+          page: this.currentPage,
+          rows: this.pagesize
+        };
+        name != "" ? (paramsObj.name = name) : "";
+        uri != "" ? (paramsObj.uri = uri) : "";
+        let orderList = [];
+        let parentList = [];
+        getMenuList(paramsObj).then(res => {
+          this.listTotal = res.data.total;
+          let tableList = res.data.rows;
+          tableList.forEach(tableItem => {
+            const { name, uri, mode, sort, id, parentId } = tableItem;
+            const orderItem = {
+              name: name,
+              linkAddress: uri,
+              isUseful: mode,
+              sort: sort,
+              id: id,
+              parentId: parentId
+            };
+            const parentItem = {
+              label: name,
+              value: id
+            };
+            parentList.push(parentItem);
+            orderList.push(orderItem);
+          });
+          this.list = orderList;
+          this.parentMenu = parentList;
         });
-        this.list = orderList;
-      });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
+      }
+      this.listLoading = false;
     },
     // 获取所有一级菜单
     getParentMenuList() {
@@ -445,8 +464,36 @@ export default {
     },
     //表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
+      let otherHeight = this.device == "desktop" ? 316 : 200;
       this.tableMaxHeight = window.innerHeight - otherHeight;
+    },
+    // 单击复制
+    handleUseful(row, column, cell, event) {
+      if (this.device == "mobile") return;
+      if (this.clickFlag) {
+        clearTimeout(this.clickFlag);
+        this.clickFlag = null;
+      }
+      this.clickFlag = setTimeout(() => {
+        let count = 0;
+        if (column.label == undefined) return;
+        if (column.label == "操作" || column.label == "排序") {
+        } else {
+          let copyText = event.target.innerText;
+          if (copyText != "") {
+            var inputElement = document.getElementById("copy_content");
+            inputElement.value = copyText;
+            inputElement.select();
+            document.execCommand("Copy");
+            this.$message({
+              message: "复制成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error("复制失败，内容可能为空");
+          }
+        }
+      }, 300);
     },
     // 表格条数变化
     handleSizeChange(val) {
@@ -461,8 +508,9 @@ export default {
     // 获取子菜单数据
     getChildrenList() {},
     // 查看子菜单
-    handleChildrenMenu(row, column, event) {
+    handleChildrenMenu(row) {
       if (row.parentId != 0) return;
+      this.childrenMenuRow = row;
       this.returnButton = true;
       this.currentPage = 1;
       this.pagesize = 50;
@@ -493,7 +541,7 @@ export default {
     // 返回主菜单列表
     handleReturnList() {
       this.returnButton = false;
-      this.list = this.getList();
+      this.getList();
     },
     // 搜索
     handleSearch() {
@@ -529,7 +577,14 @@ export default {
     },
     // 确认新增
     handleAddConfirm() {
-      if (!this.addMenuVerify) return;
+      if (this.addForm.parentMenu != "" && this.addForm.url == "") {
+        this.$message.error("请输入Url");
+        return;
+      }
+      if (this.addForm.url != "" && this.addForm.parentMenu == "") {
+        this.$message.error("请选择所属菜单");
+        return;
+      }
       addMenu({
         name: this.addForm.childrenName,
         parentId: this.addForm.parentMenu,
@@ -545,7 +600,6 @@ export default {
           }
         })
         .catch(error => {
-          console.log(error);
         });
       this.addDialogVisible = false;
     },
@@ -558,17 +612,19 @@ export default {
       this.updateForm.mode = row.isUseful;
       this.updateForm.childrenName = row.name;
       this.updateForm.url = row.linkAddress;
-      this.updateForm.parentMenu = row.parentId;
+      row.parentId == 0
+        ? (this.updateForm.parentMenu = "")
+        : (this.updateForm.parentMenu = row.parentId);
       this.updateId = row.id;
       this.updateDialogVisible = true;
     },
     // 验证更新
     updateMenuVerify() {
-      if (this.updateForm.childrenName == "") {
+      if (this.updateForm.childrenName == "" && this.updateForm.url != "") {
         this.$message.error("请输入子菜单名");
         return false;
       }
-      if (this.updateForm.url == "") {
+      if (this.updateForm.url == "" && this.updateForm.childrenName != "") {
         this.$message.error("请输入Url");
         return false;
       }
@@ -585,7 +641,6 @@ export default {
         mode: this.updateForm.mode
       })
         .then(res => {
-          console.log(res);
           if (res.status == 200) {
             this.getList();
             this.$message({
@@ -595,7 +650,6 @@ export default {
           }
         })
         .catch(error => {
-          console.log(error);
         });
       this.updateDialogVisible = false;
     },
@@ -694,7 +748,6 @@ export default {
         chinese: this.generateForm.chineseName,
         english: this.generateForm.englishName
       }).then(res => {
-        console.log(res);
       });
     },
     // 取消生成
@@ -702,7 +755,6 @@ export default {
     // 菜单上移
     handleMoveUpClick(row) {
       var timestamp = new Date().getTime();
-      console.log(timestamp);
       moveUpMenu({
         sort: row.sort,
         parentId: row.parentId,
@@ -743,17 +795,17 @@ export default {
 
     /* 移动端事件 */
 
-    //新增
+    // 新增
     handleSearchMobile() {},
-    //取消新增
+    // 取消新增
     handleAddMobileCancel() {},
-    //确认新增
+    // 确认新增
     handleMobileAdd() {},
-    //清空所选
+    // 清空所选
     handleSearchMobileClearAll() {},
-    //分页器改变
+    // 分页器改变
     handlePageChange() {},
-    //返回列表
+    // 返回列表
     handleDetailCancel() {
       this.mobileDetailShow = !this.mobileDetailShow;
     }
@@ -779,7 +831,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 

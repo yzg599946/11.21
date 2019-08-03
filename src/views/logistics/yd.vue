@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
-        type="datetimerange"
+        type="daterange"
         value-format="yyyy-MM-dd"
         :picker-options="pickerOptions"
         range-separator="至"
@@ -135,8 +135,9 @@
     <div v-else class="filter-mobile">
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
     </div>
-    <!-- 产品列表 -->
+    <!-- PC端 产品列表 -->
     <vxe-table
+      v-if="device=='desktop'"
       size="mini"
       ref="orderTable"
       :loading="listLoading"
@@ -144,52 +145,125 @@
       @select-change="handleSelectChange"
       @select-all="handleSelectAll"
       border
-      highlight-hover-row
       show-footer
+      resizable
       :footer-method="footerMethod"
       :max-height="tableMaxHeight"
       :data.sync="list"
     >
-      <vxe-table-column v-if="device=='desktop'" type="selection" width="30"></vxe-table-column>
+      <vxe-table-column type="index" align="center" width="50"></vxe-table-column>
+      <vxe-table-column type="selection" align="center" width="50"></vxe-table-column>
+      <vxe-table-column field="deliveryId" title="物流单号" align="center" width="150" show-overflow></vxe-table-column>
+      <vxe-table-column field="orderId" title="订单号" align="center" width="150" show-overflow></vxe-table-column>
+      <vxe-table-column field="senderName" title="渠道名称" align="center" width="120" show-overflow></vxe-table-column>
+      <vxe-table-column field="receiveName" title="收件人姓名" align="center" width="120" show-overflow></vxe-table-column>
       <vxe-table-column
-        field="logisticsNumber"
-        title="物流单号"
-        align="center"
-        width="150"
-        show-overflow
-      ></vxe-table-column>
-      <vxe-table-column field="orderNumber" title="订单号" align="center" width="150" show-overflow></vxe-table-column>
-      <vxe-table-column field="channel" title="渠道名称" align="center" width="120" show-overflow></vxe-table-column>
-      <vxe-table-column
-        field="recipientName"
-        title="收件人姓名"
-        align="center"
-        width="120"
-        show-overflow
-      ></vxe-table-column>
-      <vxe-table-column
-        field="recipientPhone"
+        field="receiveMobile"
         title="收件人手机"
         align="center"
         width="120"
         show-overflow
       ></vxe-table-column>
-      <vxe-table-column field="price" title="总价" align="center" width="90" show-overflow></vxe-table-column>
-      <vxe-table-column field="productName" title="产品名称" align="center" width="100" show-overflow></vxe-table-column>
-      <vxe-table-column field="count" title="数量" align="center" width="80" show-overflow></vxe-table-column>
-      <vxe-table-column field="address" title="详细地址" align="center" width="300" show-overflow></vxe-table-column>
-      <vxe-table-column field="createTime" title="创建时间" align="center" width="200" show-overflow></vxe-table-column>
-      <vxe-table-column field="shipTime" title="发货时间" align="center" width="200" show-overflow></vxe-table-column>
+      <vxe-table-column field="collectionMoney" title="总价" align="center" width="90" show-overflow></vxe-table-column>
+      <vxe-table-column field="goods" title="产品名称" align="center" width="100" show-overflow></vxe-table-column>
+      <vxe-table-column field="num" title="数量" align="center" width="80" show-overflow></vxe-table-column>
       <vxe-table-column
-        field="logisticsState"
-        title="物流状态"
+        field="receiveAddress"
+        title="详细地址"
         align="center"
-        width="120"
+        width="300"
         show-overflow
       ></vxe-table-column>
-      <vxe-table-column field="salesman" title="业务员" align="center" width="90" show-overflow></vxe-table-column>
+      <vxe-table-column field="createTime" title="创建时间" align="center" width="200" show-overflow></vxe-table-column>
+      <vxe-table-column field="deliveryTime" title="发货时间" align="center" width="200" show-overflow></vxe-table-column>
+      <vxe-table-column field="logistics" title="物流状态" align="center" width="120" show-overflow></vxe-table-column>
+      <vxe-table-column field="username" title="业务员" align="center" width="90" show-overflow></vxe-table-column>
       <vxe-table-column field="operator" title="操作员" align="center" width="90" show-overflow></vxe-table-column>
     </vxe-table>
+    <!-- 移动端 产品列表 -->
+    <el-table
+      v-else
+      ref="orderTable"
+      v-loading="listLoading"
+      size="mini"
+      border
+      fit
+      show-summary
+      :highlight-current-row="false"
+      :summary-method="getSummaries"
+      :data="list"
+      style="width: 100%;"
+      :max-height="tableMaxHeight"
+    >
+      <el-table-column
+        prop="deliveryId"
+        label="物流单号"
+        width="150"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column prop="orderId" label="订单号" width="150" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column
+        prop="senderName"
+        label="渠道名称"
+        width="120"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="receiveName"
+        label="收件人姓名"
+        width="120"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="receiveMobile"
+        label="收件人手机"
+        width="120"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="collectionMoney"
+        label="总价"
+        width="120"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column prop="goods" label="产品名称" width="80" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="num" label="数量" width="80" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column
+        prop="receiveAddress"
+        label="详细地址"
+        width="300"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="createTime"
+        label="创建时间"
+        width="100"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="deliveryTime"
+        label="发货时间"
+        width="100"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column
+        prop="logistics"
+        label="物流状态"
+        width="150"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column prop="username" label="业务员" width="100" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="operator" label="操作员" width="100" align="center" show-overflow-tooltip></el-table-column>
+    </el-table>
     <input
       id="copy_content"
       type="text"
@@ -234,6 +308,8 @@
           center
           label="跳转至"
           @input="jumpPageInput"
+          input-align="center"
+          style="width:60%!important"
         >
           <van-button slot="button" size="mini" type="info" @click="handleJumpPage">GO</van-button>
         </van-field>
@@ -241,7 +317,7 @@
       <van-pagination
         v-model="mobileCurrentPage"
         :total-items="listTotal"
-        :items-per-page="pagesize"
+        :items-per-page="50"
         :show-page-size="3"
         force-ellipses
         @change="handlePageChange"
@@ -511,8 +587,12 @@ export default {
               );
               const end = new Date(
                 new Date().getFullYear(),
-                new Date().getMonth(),
-                1
+                new Date().getMonth() - 1,
+                new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  0
+                ).getDate()
               );
               picker.$emit("pick", [start, end]);
             }
@@ -649,9 +729,15 @@ export default {
     };
   },
   created() {
-    this.getList();
     this.device = this.$store.state.app.device;
     window.addEventListener("resize", this.getHeight);
+    this.$nextTick(() => {
+      if (this.device === "desktop") {
+        this.getList();
+      } else {
+        this.getMobileList();
+      }
+    });
     this.getSalesman();
     this.getChannel();
     this.getProduct();
@@ -683,7 +769,7 @@ export default {
         }
       });
 
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -715,50 +801,14 @@ export default {
       getYundaLogisticsList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              deliveryId,
-              orderId,
-              senderName,
-              receiveName,
-              receiveMobile,
-              collectionMoney,
-              goods,
-              num,
-              receiveAddress,
-              createTime,
-              deliveryTime,
-              logistics,
-              username,
-              operator
-            } = tableItem;
-            const orderItem = {
-              logisticsNumber: deliveryId,
-              orderNumber: orderId,
-              channel: senderName,
-              recipientName: receiveName,
-              recipientPhone: receiveMobile,
-              price: collectionMoney,
-              productName: goods,
-              count: num,
-              address: receiveAddress,
-              createTime: createTime,
-              shipTime: deliveryTime,
-              logisticsState: logistics,
-              salesman: username,
-              operator: operator
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
+          this.list = res.data.rows;
+          this.listLoading = false;
+          this.$refs.orderTable.clearScroll();
         })
         .catch(error => {
-          console.log(error);
+          this.$message.error("获取数据时出错");
+          this.listLoading = false;
         });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
     },
     // 获取业务员列表
     getSalesman() {
@@ -770,7 +820,7 @@ export default {
             label: salesmanItem.name
           };
           this.salemanOptions.push(salesmanObject);
-          this.salesmanColumns.push(salesmanItem.name);
+          this.salesmanColumns.push(salesmanItem.label);
         });
       });
     },
@@ -805,8 +855,16 @@ export default {
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 86 + 10 + 37);
+        }
+      });
     },
     // 单击复制
     handleUseful({ row, rowIndex, column, columnIndex }, event) {
@@ -884,7 +942,7 @@ export default {
         }
       });
 
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -943,7 +1001,7 @@ export default {
         return;
       }
 
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -997,13 +1055,9 @@ export default {
       this.dialogVisible = false;
     },
     // 移除选择
-    handleRemove(file, fileList) {
-      console.log(file, fileList);
-    },
+    handleRemove(file, fileList) {},
     // 选择文件
-    handlePreview(file) {
-      console.log(file);
-    },
+    handlePreview(file) {},
     // 业务员选择器宽度自适应
     salemanChange() {
       const inputWidth = 178; //选择器原始宽度 178px
@@ -1028,7 +1082,7 @@ export default {
           if (columnIndex === 1) {
             return "合计";
           }
-          if (["count", "price"].includes(column.property)) {
+          if (["collectionMoney"].includes(column.property)) {
             return XEUtils.sum(data, column.property);
           }
           return "-";
@@ -1081,16 +1135,13 @@ export default {
           });
         }
       }
-      let searchList = [];
-
       let paramsObj = {
         contains: this.contains,
-        rows: this.pagesize,
+        rows: 50,
         page: this.mobileCurrentPage
       };
       timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
       timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      channelId ? (paramsObj.cid = channelId) : "";
       this.channelMobileValue != "请选择"
         ? (paramsObj.senderName = this.channelMobileValue)
         : "";
@@ -1114,53 +1165,40 @@ export default {
       if (uids.length > 0) {
         paramsObj.uids = uids.join(",");
       }
-      getJingdongLogisticsList(paramsObj)
+      getYundaLogisticsList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;
-          const tableData = res.data.rows;
-          tableData.forEach(tableItem => {
-            const {
-              deliveryId,
-              orderId,
-              senderName,
-              receiveName,
-              receiveMobile,
-              collectionMoney,
-              goods,
-              num,
-              receiveAddress,
-              createTime,
-              deliveryTime,
-              logistics,
-              username,
-              operator
-            } = tableItem;
-            const orderItem = {
-              logisticsNumber: deliveryId,
-              orderNumber: orderId,
-              channel: senderName,
-              recipientName: receiveName,
-              recipientPhone: receiveMobile,
-              price: collectionMoney,
-              productName: goods,
-              count: num,
-              address: receiveAddress,
-              createTime: createTime,
-              shipTime: deliveryTime,
-              logisticsState: logistics,
-              salesman: username,
-              operator: operator
-            };
-            searchList.push(orderItem);
-          });
-          this.list = searchList;
+          this.list = res.data.rows;
+          this.listLoading = false;
+          this.$refs.orderTable.bodyWrapper.scrollTop = 0;
         })
         .catch(error => {
-          console.log(error);
+          this.$message.error("获取数据时出错");
+          this.listLoading = false;
         });
-      setTimeout(() => {
-        this.listLoading = false;
-      }, 1000);
+    },
+    // 合计
+    getSummaries(param) {
+      const { columns, data } = param;
+      const sums = [];
+      columns.forEach((column, index) => {
+        if (index === 0) {
+          sums[index] = "合计";
+          return;
+        }
+        const values = data.map(item => Number(item[column.property]));
+        if (index === 5) {
+          sums[index] = values.reduce((prev, curr) => {
+            const value = Number(curr);
+            if (!isNaN(value)) {
+              return prev + curr;
+            } else {
+              return prev;
+            }
+          }, 0);
+        }
+      });
+      return sums;
     },
     //分页器
     handlePageChange() {
@@ -1379,6 +1417,7 @@ export default {
       this.mobileSearchButtonLoading = true;
       this.getMobileList();
       this.mobileSearchButtonLoading = false;
+      this.mobileSearchShow = false;
     },
     //限制页面跳转输入框只能输入数字
     jumpPageInput() {
@@ -1388,8 +1427,8 @@ export default {
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
       if (jumpPage == this.mobileCurrentPage) return;
-      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
-        jumpPage = Math.ceil(this.listTotal / this.pagesize);
+      if (jumpPage > Math.ceil(this.listTotal / 50)) {
+        jumpPage = Math.ceil(this.listTotal / 50);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
@@ -1408,7 +1447,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 .filter-container label {

@@ -13,7 +13,7 @@ export default {
   },
   data() {
     return {
-      category:'igbracelet'
+      category:'igBracelet'
     };
   }
 };

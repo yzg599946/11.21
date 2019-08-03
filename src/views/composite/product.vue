@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="名称" v-model="nameInput" clearable></el-input>
       <el-button
         size="mini"
@@ -43,13 +43,13 @@
       @row-click="handleSelect"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column fixed type="selection" align="center" width="50"></el-table-column>
-      <el-table-column label="id" :width="device=='desktop'?'500':'170'" align="center">
+      <el-table-column v-if="device=='desktop'" type="selection" align="center" width="50"></el-table-column>
+      <el-table-column label="id" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="名称" :width="device=='desktop'?'500':'170'" align="center">
+      <el-table-column label="名称" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
@@ -57,7 +57,6 @@
       <el-table-column
         v-if="device=='desktop'"
         label="操作"
-        :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -122,7 +121,7 @@
       </div>
     </el-dialog>
     <!-- 新增产品 -->
-    <el-dialog title="新增产品" :visible.sync="editDialogVisible">
+    <el-dialog title="新增产品" :visible.sync="editDialogVisible" width="30%">
       <el-form :model="form" size="mini">
         <el-form-item label="产品" :label-width="formLabelWidth">
           <el-input v-model="form.productName" clearable placeholder="请输入名称" class="normal-edit"></el-input>
@@ -235,7 +234,7 @@ export default {
       mobileCurrentPage:1,
       pagesizes: [50, 100, 200], //单页最大显示条数
       pagesize: 50, //单页内条数
-      listTotal:0,//总数
+      listTotal: 0, //总数
       device: "",
       mobileSearchShow: false,
       mobileSearchButtonLoading: false,
@@ -298,17 +297,23 @@ export default {
           });
           this.list = orderList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
     },
     // 选择表格尺寸
     handleSizeChange(val) {
@@ -363,9 +368,7 @@ export default {
             });
           }
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       this.editDialogVisible = false;
     },
     // 更新
@@ -398,9 +401,7 @@ export default {
             });
           }
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       this.UpdateDialogVisible = false;
     },
     // 取消更新
@@ -529,8 +530,8 @@ export default {
       let orderList = [];
       let paramsObj = {
         contains: false,
-        page: mobileCurrentPage,
-        rows: pagesize
+        page: this.mobileCurrentPage,
+        rows: this.pagesize
       };
       this.nameMobileValue != "" ? (paramsObj.name = this.nameMobileValue) : "";
       getAllProductList(paramsObj)
@@ -544,9 +545,7 @@ export default {
           });
           this.list = orderList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
@@ -622,7 +621,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 
@@ -660,5 +659,9 @@ export default {
   color: #323233;
   padding-left: 10px;
   width: 35%;
+}
+
+.normal-edit {
+  width: 200px;
 }
 </style>

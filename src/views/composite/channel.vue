@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-input size="mini" class="table-input" placeholder="名称" v-model="nameInput" clearable></el-input>
       <el-button
         size="mini"
@@ -52,21 +52,20 @@
       @row-click="handleSelect"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column label="id" :width="device=='desktop'?'500':'170'" align="center">
+            <el-table-column v-if="device=='desktop'" type="selection" align="center" width="50"></el-table-column>
+      <el-table-column label="id" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="名称" :width="device=='desktop'?'500':'170'" align="center">
+      <el-table-column label="名称" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="device=='desktop'" fixed type="selection" align="center" width="50"></el-table-column>
       <el-table-column
         v-if="device=='desktop'"
         label="操作"
-        :width="device=='desktop'?'500':'100'"
         align="center"
       >
         <template slot-scope="scope">
@@ -141,7 +140,7 @@
       </div>
     </el-dialog>
     <!-- 新增渠道 -->
-    <el-dialog title="新增渠道" :visible.sync="editDialogVisible">
+    <el-dialog title="新增渠道" :visible.sync="editDialogVisible" width="30%">
       <el-form :model="form" size="mini">
         <el-form-item label="所属渠道" :label-width="formLabelWidth">
           <el-select v-model="form.parentChannel" clearable filterable placeholder="请选择所属渠道">
@@ -332,9 +331,7 @@ export default {
           });
           this.list = orderList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
@@ -354,8 +351,16 @@ export default {
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 +18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 88 + 10);
+        }
+      });
     },
     // 选择表格尺寸
     handleSizeChange(val) {
@@ -439,9 +444,7 @@ export default {
           });
           this.list = orderList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
@@ -483,10 +486,6 @@ export default {
     // 新增验证
     addChannelVerify() {
       const { channelName, parentChannel } = this.form;
-      if (parentChannel == null || parentChannel == "") {
-        this.$message.error("请选择所属渠道");
-        return false;
-      }
       if (channelName == "") {
         this.$message.error("请填写渠道名");
         return false;
@@ -507,9 +506,7 @@ export default {
             });
           }
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       this.editDialogVisible = false;
     },
     // 更新
@@ -546,9 +543,7 @@ export default {
             });
           }
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       this.UpdateDialogVisible = false;
     },
     // 取消更新
@@ -654,9 +649,7 @@ export default {
 
           this.list = orderList;
         })
-        .catch(error => {
-          console.log(error);
-        });
+        .catch(error => {});
       setTimeout(() => {
         this.listLoading = false;
       }, 1000);
@@ -679,8 +672,8 @@ export default {
     },
     // 开始搜索
     handleMobileSearch() {
-      if(this.nameMobileValue == ''){
-        this.$message.error('请输入名称');
+      if (this.nameMobileValue == "") {
+        this.$message.error("请输入名称");
         return;
       }
       this.mobileSearchButtonLoading = true;
@@ -732,7 +725,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 
@@ -770,5 +763,9 @@ export default {
   color: #323233;
   padding-left: 10px;
   width: 35%;
+}
+
+.normal-edit {
+  width: 200px;
 }
 </style>

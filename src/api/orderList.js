@@ -11,6 +11,15 @@ export function getOuterChainOrder(category, data) {
   })
 }
 
+// 获取订单信息
+export function getOuterChainOrderInfo(category, params) {
+  return request({
+    url: `/page/admin/${category}/order/update`,
+    method: 'get',
+    params
+  })
+}
+
 // 修改订单信息
 export function editOuterChainOrder(category, data) {
   return request({
@@ -146,6 +155,24 @@ export function getTencentOrderList(data) {
   })
 }
 
+// 获取订单信息
+export function getTencentOrderInfo(params) {
+  return request({
+    url: '/page/admin/tencent/order/update',
+    method: 'get',
+    params
+  })
+}
+
+// 替换重复项
+export function replaceTencentDuplicates(data) {
+  return request({
+    url: `/admin/tencent/update/pageInfo`,
+    method: 'post',
+    data
+  })
+}
+
 // 导出表格
 export function exportTencentExcel(category, data) {
   return request({
@@ -182,6 +209,33 @@ export function editUsefulTencent(data) {
 export function getToutiaoOrderList(category, data) {
   return request({
     url: `/admin/${category}/order`,
+    method: 'post',
+    data
+  })
+}
+
+// 获取订单信息
+export function getToutiaoOrderInfo(category, params) {
+  return request({
+    url: `/page/admin/${category}/order/update`,
+    method: 'get',
+    params
+  })
+}
+
+// 获取套餐属性
+export function getPageInfoList(data) {
+  return request({
+    url: '/admin/user/tt/pageInfo',
+    method: 'post',
+    data
+  })
+}
+
+// 替换重复项
+export function replaceDuplicates(category, data) {
+  return request({
+    url: `/admin/${category}/update/pageInfo`,
     method: 'post',
     data
   })
@@ -452,6 +506,24 @@ export function getCheckLoginList(data) {
   })
 }
 
+// 确认登陆
+export function checkLogin(data) {
+  return request({
+    url: '/admin/confirmLogin',
+    method: 'post',
+    data
+  })
+}
+
+// 修改客服登陆ip
+export function editLoginIp(data) {
+  return request({
+    url: '/main/common/order/updateIp',
+    method: 'get',
+    data
+  })
+}
+
 // 获取用户列表
 export function getUserList(data) {
   return request({
@@ -662,7 +734,8 @@ export function getMonitorProductList(data) {
   return request({
     url: '/admin/monitorProduct/list',
     method: 'post',
-    data
+    data,
+    baseURL: 'http://120.79.232.97'
   })
 }
 

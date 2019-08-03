@@ -1,9 +1,8 @@
 import Cookies from 'js-cookie'
 
-const TokenKey = 'lht_admin_token' // cookies名
+const TokenKey = 'lht_token' // cookies名
+const loginStauts = 'login_status' // 登陆态
 const expireDate = { expires: 2 } // 失效时间
-
-const LoginKey = 'loginState'
 
 export function getToken() {
   return Cookies.get(TokenKey)
@@ -21,14 +20,26 @@ export function removeToken() {
   return Cookies.remove(TokenKey)
 }
 
-export function getLoginState() {
-  return Cookies.get(LoginKey)
+export function getLoginStatus() {
+  return Cookies.get(loginStauts)
 }
 
-export function setLoginState(state) {
-  return Cookies.set(LoginKey, state)
+export function setLoginStatus(token) {
+  return Cookies.set(loginStauts, token)
 }
 
-export function removeLoginState() {
-  return Cookies.remove(LoginKey)
+export function removeLoginStatus() {
+  return Cookies.remove(loginStauts)
+}
+
+export function getTagView() {
+  return window.sessionStorage.getItem('tagView')
+}
+
+export function setTagView(val) {
+  return window.sessionStorage.setItem('tagView', val)
+}
+
+export function removeTagView() {
+  return window.sessionStorage.removeItem('tagView')
 }

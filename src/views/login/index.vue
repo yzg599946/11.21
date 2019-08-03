@@ -11,6 +11,14 @@
       <div class="title-container">
         <h3 class="title">隆辉腾管理系统</h3>
       </div>
+      <el-alert
+        v-if="checkLogin"
+        :title="checkLoginMsg"
+        type="info"
+        center
+        show-icon
+        :closable="false"
+      ></el-alert>
       <el-form-item prop="username">
         <span class="svg-container">
           <svg-icon icon-class="user" />
@@ -55,7 +63,7 @@
           name="verification"
           type="text"
           tabindex="3"
-          auto-complete="on"
+          auto-complete="off"
           @keyup.enter.native="handleLogin"
         />
         <el-button
@@ -79,7 +87,7 @@
 
 <script>
 import { validUsername } from "@/utils/validate";
-import { getVerifyCode } from "@/api/user";
+import { getVerifyCode, sina } from "@/api/user";
 import { clearTimeout, clearInterval } from "timers";
 
 export default {
@@ -128,7 +136,9 @@ export default {
       redirect: undefined,
       timecount: 60,
       verifyButtonText: "获取验证码",
-      verifyButtonFlag: false
+      verifyButtonFlag: false,
+      checkLogin: false,
+      checkLoginMsg: "等待管理员确认中"
     };
   },
   watch: {
@@ -138,6 +148,19 @@ export default {
       },
       immediate: true
     }
+  },
+  computed: {
+    checkLoginVal() {
+      return this.$store.getters.status;
+    }
+  },
+  watch: {
+    checkLoginVal(newVal, oldVal) {
+      this.checkLogin = newVal;
+    }
+  },
+  created() {
+    this.fastLogin();
   },
   methods: {
     showPwd() {
@@ -189,6 +212,17 @@ export default {
         return;
       }
       setTimeout(this.time, 1000);
+    },
+    fastLogin() {
+      if (this.$store.getters.token) {
+        if (this.$store.getters.token.indexOf("true") > -1) {
+          // if (this.$store.getters.loginStatus) {
+          this.$store.dispatch("user/fastLogin", { index: "fast" }).then(() => {
+            this.$router.push({ path: "/" });
+          });
+          // }
+        }
+      }
     }
   }
 };
@@ -249,7 +283,7 @@ $light_gray: #eee;
 .login-container {
   min-height: 100%;
   width: 100%;
-  background: url("http://i2.tiimg.com/689844/8a66af3216348e85.png"),
+  background: url("https://lhtpic01.oss-cn-shenzhen.aliyuncs.com/common/bg-pattern.png"),
     linear-gradient(to left, #328944, #247cdc);
   overflow: hidden;
 

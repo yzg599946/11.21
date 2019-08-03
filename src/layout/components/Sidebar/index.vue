@@ -33,7 +33,6 @@ export default {
     ]),
     routes() {
       return this.$router.options.routes
-      console.log(this.$router.options.routes)
     },
     activeMenu() {
       const route = this.$route
@@ -59,7 +58,7 @@ export default {
 
 <style lang='scss'>
  .sidebar-list{
-   margin-bottom: 50px;
+   margin-bottom: 56px!important;
  }
  .mobile .sidebar-container .el-scrollbar__wrap{
    margin-right: 0!important;

@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
     <!-- PC端 功能按钮 -->
-    <div v-if="device=='desktop'" class="filter-container">
+    <div ref="filterBox" v-if="device=='desktop'" class="filter-container">
       <el-date-picker
         v-model="timeSelectValue"
-        type="datetimerange"
+        type="daterange"
         value-format="yyyy-MM-dd"
         :picker-options="pickerOptions"
         range-separator="至"
@@ -45,7 +45,14 @@
           :value="item.value"
         ></el-option>
       </el-select>
-      <el-select size="mini" v-model="productValue" clearable filterable placeholder="产品">
+      <el-select
+        size="mini"
+        class="table-input"
+        v-model="productValue"
+        clearable
+        filterable
+        placeholder="产品"
+      >
         <el-option
           v-for="item in productOptions"
           :key="item.value"
@@ -126,72 +133,132 @@
     <!-- 移动端 功能按钮 -->
     <div v-else class="filter-mobile">
       <van-button type="info" size="small" @click="handleSearchMobile">搜索</van-button>
+      <van-button type="info" size="small" @click="handleRefreshMobile">刷新</van-button>
     </div>
-    <!-- 产品列表 -->
+    <!-- PC端 产品列表 -->
     <vxe-table
+      v-if="device=='desktop'"
       size="mini"
       ref="orderTable"
       :loading="listLoading"
       @cell-click="handleUseful"
+      @header-cell-click="handleSort"
       border
-      highlight-hover-row
       show-footer
+      show-overflow
+      resizable
       :footer-method="footerMethod"
       :max-height="tableMaxHeight"
       :data.sync="list"
+      :optimization="{scrollY: {gt: 500, oSize: 20, rSize: 60}}"
     >
-      <vxe-table-column field="cpName" title="项目渠道" align="center" width="120" show-overflow></vxe-table-column>
-      <vxe-table-column
-        field="productName"
-        title="产品名称"
-        sortable
-        align="center"
-        width="90"
-        show-overflow
-      ></vxe-table-column>
-      <vxe-table-column field="name" title="名字" width="90" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="telephone" title="手机" width="100" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="num" title="数量" width="60" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="totalCost" title="总价" width="80" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="isRepeat" title="重单" width="60" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="address" title="详细地址" width="260" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="createTime" title="创建时间" width="150" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="remarks" title="备注" width="100" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column title="是否可用" width="80" align="center" show-overflow>
-        <template v-slot="{row}">
-          <span v-if="row.mode == 0">可用</span>
-          <span v-else style="color:red">不可用</span>
+      <vxe-table-column type="index" width="60" align="center"></vxe-table-column>
+      <vxe-table-column field="cpName" title="项目渠道" align="center" width="120"></vxe-table-column>
+      <vxe-table-column field="productName" title="产品名称" align="center" width="150">
+        <template v-slot:header="{ column }">
+          <span>产品名称</span>
+          <i v-if="orderType == ''" class="el-icon-sort"></i>
+          <i v-if="orderType == 'asc'" class="el-icon-sort-up"></i>
+          <i v-if="orderType == 'desc'" class="el-icon-sort-down"></i>
         </template>
       </vxe-table-column>
-      <vxe-table-column title="导入物流状态" width="120" align="center" show-overflow>
+      <vxe-table-column field="name" title="名字" width="120" align="center"></vxe-table-column>
+      <vxe-table-column field="telephone" title="手机" width="120" align="center"></vxe-table-column>
+      <vxe-table-column field="num" title="数量" width="80" align="center"></vxe-table-column>
+      <vxe-table-column field="totalCost" title="总价" width="90" align="center"></vxe-table-column>
+      <vxe-table-column field="isRepeat" title="重单" width="80" align="center"></vxe-table-column>
+      <vxe-table-column field="address" title="详细地址" min-width="300" align="left"></vxe-table-column>
+      <vxe-table-column title="是否可用" width="90" align="center">
         <template v-slot="{row}">
-          <span v-if="row.isImport == 0">已导入</span>
+          <span v-if="row.mode == 1" style="color:#1890ff;">有效单</span>
+          <span v-else style="color:red;">无效单</span>
+        </template>
+      </vxe-table-column>
+      <vxe-table-column title="导入物流状态" width="120" align="center">
+        <template v-slot="{row}">
+          <span v-if="row.isImport == 1" style="color:#1890ff">已导入</span>
           <span v-else style="color:red">未导入</span>
         </template>
       </vxe-table-column>
-      <vxe-table-column field="username" title="业务员" width="80" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column field="operator" title="操作员" width="80" align="center" show-overflow></vxe-table-column>
-      <vxe-table-column
-        field="nuclearOrderInterval"
-        title="核单间隔"
-        width="80"
-        align="center"
-        show-overflow
-      ></vxe-table-column>
+      <vxe-table-column field="username" title="业务员" width="100" align="center"></vxe-table-column>
+      <vxe-table-column field="operator" title="操作员" width="100" align="center"></vxe-table-column>
+      <vxe-table-column field="operatingTime" title="核单间隔" width="120" align="center"></vxe-table-column>
     </vxe-table>
+    <!-- 移动端 产品列表 -->
+    <el-table
+      v-else
+      ref="orderTable"
+      v-loading="listLoading"
+      size="mini"
+      border
+      fit
+      show-summary
+      :highlight-current-row="false"
+      :summary-method="getSummaries"
+      :data="list"
+      style="width: 100%;"
+      :max-height="tableMaxHeight"
+    >
+      <el-table-column prop="cpName" label="项目渠道" width="120" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column
+        prop="productName"
+        label="产品名称"
+        width="150"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+      <el-table-column prop="name" label="名字" width="120" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="telephone" label="手机" width="120" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="num" label="数量" width="80" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="totalCost" label="总价" width="90" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="isRepeat" label="重单" width="80" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="address" label="详细地址" width="300" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column label="是否可用" width="90" align="center" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <span v-if="scope.row.mode == 1" style="color:#1890ff;">有效单</span>
+          <span v-else style="color:red;">无效单</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="导入物流状态" width="120" align="center" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <span v-if="scope.row.isImport == 1" style="color:#1890ff">已导入</span>
+          <span v-else style="color:red">未导入</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="username" label="业务员" width="100" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="operator" label="操作员" width="100" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column
+        prop="operatingTime"
+        label="核单间隔"
+        width="120"
+        align="center"
+        show-overflow-tooltip
+      ></el-table-column>
+    </el-table>
     <!-- PC端 分页器 -->
-    <el-pagination
-      v-if="device=='desktop'"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="pagesizes"
-      :page-size="pagesize"
-      hide-on-single-page
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="listTotal"
-      class="pagination"
-    ></el-pagination>
+    <el-row v-if="device!='mobile'" type="flex" align="middle">
+      <el-col :span="23">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="pagesizes"
+          :page-size="pagesize"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="listTotal"
+          class="pagination"
+        ></el-pagination>
+      </el-col>
+      <el-col :span="1">
+        <el-button
+          size="mini"
+          class="filter-item"
+          type="primary"
+          icon="el-icon-refresh"
+          @click="handleRefresh"
+        >刷新</el-button>
+      </el-col>
+    </el-row>
     <!-- 移动端 分页器 -->
     <div v-else class="mobile-pagination">
       <div class="mobile-pagejump">
@@ -211,7 +278,7 @@
       <van-pagination
         v-model="mobileCurrentPage"
         :total-items="listTotal"
-        :items-per-page="pagesize"
+        :items-per-page="50"
         :show-page-size="3"
         force-ellipses
         @change="handlePageChange"
@@ -418,6 +485,7 @@
 
 <script>
 import Vue from "vue";
+import { getStore } from "@/utils/store";
 import XEUtils from "xe-utils";
 import { parseTime } from "@/utils";
 import {
@@ -475,8 +543,12 @@ export default {
               );
               const end = new Date(
                 new Date().getFullYear(),
-                new Date().getMonth(),
-                1
+                new Date().getMonth() - 1,
+                new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  0
+                ).getDate()
               );
               picker.$emit("pick", [start, end]);
             }
@@ -494,47 +566,47 @@ export default {
       usefulOptions: [
         {
           value: "0",
-          label: "是"
+          label: "无效单"
         },
         {
           value: "1",
-          label: "否"
+          label: "有效单"
         }
       ],
-      usefulColumns: ["有效单", "无效单"],
+      usefulColumns: ["无效单", "有效单"],
       repeatOrderOptions: [
         {
           value: "0",
-          label: "是"
+          label: "不重单"
         },
         {
           value: "1",
-          label: "否"
+          label: "重单"
         }
       ],
-      repeatOrderColumns: ["重单", "不重单"],
+      repeatOrderColumns: ["不重单", "重单"],
       repeatNamePhoneOptions: [
         {
           value: "0",
-          label: "是"
+          label: "不重复手机姓名"
         },
         {
           value: "1",
-          label: "否"
+          label: "重复手机姓名"
         }
       ],
-      repeatNamePhoneColumns: ["重复", "不重复"],
+      repeatNamePhoneColumns: ["不重复", "重复"],
       exportjdOptions: [
         {
           value: "0",
-          label: "是"
+          label: "未导入"
         },
         {
           value: "1",
-          label: "否"
+          label: "已导入"
         }
       ],
-      exportJDColumns: ["已导入", "未导入"],
+      exportJDColumns: ["未导入", "已导入"],
       timeSelectValue: "",
       salemanValue: "",
       channelValue: "",
@@ -586,7 +658,6 @@ export default {
       productMobileValue: "请选择",
       usefulMobileValue: "请选择",
       repeatOrderMobileValue: "请选择",
-      repeatNamePhoneMobileValue: "请选择",
       exportJDMobileValue: "请选择",
       nameMobileValue: "",
       colorMobileValue: "",
@@ -608,18 +679,26 @@ export default {
       pageJumpIndex: 1,
       searchButtonLoading: false,
       clearSearchButtonLoading: false,
-      contains: false
+      contains: false,
+      orderType: "",
+      orderName: ""
     };
   },
   created() {
-    this.getList();
+    this.device = this.$store.state.app.device;
+    window.addEventListener("resize", this.getHeight);
+    this.$nextTick(() => {
+      if (this.device === "desktop") {
+        this.getList();
+      } else {
+        this.getMobileList();
+      }
+    });
     this.getHeight();
     this.getSalesman();
     this.getChannel();
     this.getProduct();
     this.getColor();
-    this.device = this.$store.state.app.device;
-    window.addEventListener("resize", this.getHeight);
   },
   destroyed() {
     window.removeEventListener("resize", this.getHeight);
@@ -640,7 +719,7 @@ export default {
       this.listLoading = true;
       let searchList = [];
 
-       if (this.timeSelectValue == null) {
+      if (this.timeSelectValue == null) {
         this.timeSelectValue = ["", ""];
       } else {
         this.timeSelectValue == "" ? this.timeSelectValue : ["", ""];
@@ -659,6 +738,7 @@ export default {
       this.channelValue ? (paramsObj.cid = this.channelValue) : "";
       this.repeatOrderValue ? (paramsObj.isRepeat = this.repeatOrderValue) : "";
       this.usefulValue ? (paramsObj.mode = this.usefulValue) : "";
+      this.exportjdValue ? (paramsObj.isImport = this.exportjdValue) : "";
       this.nameInput ? (paramsObj.name = this.nameInput) : "";
       this.productValue ? (paramsObj.productId = this.productValue) : "";
       this.phoneNumberInput
@@ -667,81 +747,74 @@ export default {
       if (this.salemanValue.length > 0) {
         paramsObj.uids = this.salemanValue.join(",");
       }
+      if (this.orderType != "") {
+        paramsObj.order = this.orderType;
+        paramsObj.sort = this.orderName;
+      }
       getAllOrderList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;
           this.list = res.data.rows;
           this.listLoading = false;
+          this.$refs.orderTable.clearScroll();
         })
         .catch(error => {
-          console.log(error);
           this.$message.error("获取数据时出错");
           this.listLoading = false;
         });
     },
     // 获取业务员列表
     getSalesman() {
-      getSalesmanList().then(res => {
-        const salesmanList = res.data;
-        salesmanList.forEach(salesmanItem => {
-          const salesmanObject = {
-            value: salesmanItem.id,
-            label: salesmanItem.name
-          };
-          this.salemanOptions.push(salesmanObject);
-          this.salesmanColumns.push(salesmanItem.name);
-        });
+      let salesmanList = getStore({ name: "salesmanList" });
+      this.salemanOptions = JSON.parse(salesmanList);
+      let salesmanColumns = [];
+      this.salemanOptions.forEach(salesmanItem => {
+        salesmanColumns.push(salesmanItem.label);
       });
+      this.salesmanColumns = salesmanColumns;
     },
     // 获取渠道列表
     getChannel() {
-      getChannelList().then(res => {
-        const channelList = res.data;
-        channelList.forEach(channelItem => {
-          const channelObject = {
-            value: channelItem.id,
-            label: channelItem.name
-          };
-          this.channelOptions.push(channelObject);
-          this.channelColumns.push(channelItem.name);
-        });
+      let channelList = getStore({ name: "channelList" });
+      this.channelOptions = JSON.parse(channelList);
+      let channelColumns = [];
+      this.channelOptions.forEach(channelItem => {
+        channelColumns.push(channelItem.label);
       });
+      this.channelColumns = channelColumns;
     },
     // 获取产品列表
     getProduct() {
-      getProductList().then(res => {
-        const productList = res.data;
-
-        productList.forEach(productItem => {
-          const productObject = {
-            value: productItem.id,
-            label: productItem.name
-          };
-          this.productOptions.push(productObject);
-          this.productColumns.push(productItem.name);
-        });
+      let productList = getStore({ name: "productList" });
+      this.productOptions = JSON.parse(productList);
+      let productColumns = [];
+      this.productOptions.forEach(productItem => {
+        productColumns.push(productItem.label);
       });
+      this.productColumns = productColumns;
     },
     // 获取颜色列表
     getColor() {
-      getColorList().then(res => {
-        const colorList = res.data;
-        colorList.forEach(colorItem => {
-          if (colorItem.name) {
-            const colorProject = {
-              value: colorItem.id,
-              label: colorItem.name
-            };
-            this.colorOptions.push(colorProject);
-            this.colorColumns.push(colorItem.name);
-          }
-        });
+      let colorList = getStore({ name: "colorList" });
+      this.colorOptions = JSON.parse(colorList);
+      let colorColumns = [];
+      this.colorOptions.forEach(colorItem => {
+        colorColumns.push(colorItem.label);
       });
+      this.colorColumns = colorColumns;
     },
     // 表格高度自适应
     getHeight() {
-      let otherHeight = this.device == "desktop" ? 250 : 200;
-      this.tableMaxHeight = window.innerHeight - otherHeight;
+      this.$nextTick(() => {
+        if (this.device === "desktop") {
+          this.tableMaxHeight =
+            document.body.offsetHeight -
+            (200 + this.$refs.filterBox.offsetHeight + 40 + 18);
+        } else {
+          this.tableMaxHeight =
+            document.body.offsetHeight - (100 + 40 + 40 + 86 + 10 + 37);
+        }
+      });
     },
     // 单击复制
     handleUseful({ row, rowIndex, column, columnIndex }, event) {
@@ -758,7 +831,7 @@ export default {
         });
       } else {
         let copyText = event.target.innerText;
-        if (copyText != "") {
+        if (copyText) {
           var inputElement = document.getElementById("copy_content");
           inputElement.value = copyText;
           inputElement.select();
@@ -822,44 +895,75 @@ export default {
         })
       ];
     },
+    // 刷新
+    handleRefresh() {
+      this.getList();
+    },
+    // 排序
+    handleSort(
+      {
+        triggerResizable,
+        triggerSort,
+        triggerFilter,
+        $rowIndex,
+        column,
+        columnIndex,
+        $columnIndex,
+        cell
+      },
+      event
+    ) {
+      if (column.title == "产品名称") {
+        if (this.orderType == "") {
+          this.orderType = "asc";
+        } else if (this.orderType == "asc") {
+          this.orderType = "desc";
+        } else {
+          this.orderType = "";
+        }
+        this.orderName = column.property;
+        this.getList();
+      }
+    },
 
     /* 移动端事件 */
 
     // 获取数据
     getMobileList() {
       this.listLoading = true;
-      let timeStartValue = "";
-      let timeEndValue = "";
-      let productId = "";
-      let channelId = "";
       let uids = [];
-      let repeatOrder = "";
-      let usefulOrder = "";
+      let paramsObj = {
+        contains: this.contains,
+        rows: "50",
+        page: this.mobileCurrentPage
+      };
 
       this.timePickerStartValue == "请选择"
-        ? (timeStartValue = "")
-        : (timeStartValue = this.timePickerStartValue.replace(/\//g, "-"));
+        ? ""
+        : (paramsObj.createTime = this.timePickerStartValue.replace(
+            /\//g,
+            "-"
+          ));
       this.timePickerEndValue == "请选择"
-        ? (timeEndValue = "")
-        : (timeEndValue = this.timePickerEndValue.replace(/\//g, "-"));
+        ? ""
+        : (paramsObj.createTimeEnd = this.timePickerEndValue.replace(
+            /\//g,
+            "-"
+          ));
       if (this.productMobileValue != "请选择") {
         this.productOptions.forEach(productItem => {
           if (productItem.label == this.productMobileValue) {
-            productId = productItem.value;
+            paramsObj.productId = productItem.value;
           }
         });
-      } else {
-        productId = "";
       }
 
       if (this.channelMobileValue != "请选择") {
         this.channelOptions.forEach(channelItem => {
           if (channelItem.label == this.channelMobileValue) {
-            channelId = channelItem.value;
+            paramsObj.cid = channelItem.value;
           }
         });
-      } else {
-        channelId = "";
       }
 
       if (this.salesmanMobileValue != "请选择") {
@@ -884,62 +988,66 @@ export default {
 
       if (this.repeatOrderMobileValue != "请选择") {
         this.repeatOrderMobileValue == "重单"
-          ? (repeatOrder = 1)
-          : (repeatOrder = 0);
-      } else {
-        repeatOrder = "";
+          ? (paramsObj.isRepeat = 1)
+          : (paramsObj.isRepeat = 0);
       }
 
       if (this.usefulMobileValue != "请选择") {
         this.usefulMobileValue == "有效单"
-          ? (usefulOrder = 1)
-          : (usefulOrder = 0);
-      } else {
-        usefulOrder = "";
+          ? (paramsObj.mode = 1)
+          : (paramsObj.mode = 0);
       }
-      this.mobileSearchButtonLoading = true;
-      let searchList = [];
+      if (this.exportJDMobileValue != "请选择") {
+        this.exportJDMobileValue == "已导入"
+          ? (paramsObj.isImport = 1)
+          : (paramsObj.isImport = 0);
+      }
 
-      let paramsObj = {
-        contains: this.contains,
-        rows: this.pagesize,
-        page: this.mobileCurrentPage
-      };
-      timeStartValue ? (paramsObj.createTime = timeStartValue) : "";
-      timeEndValue ? (paramsObj.createTimeEnd = timeEndValue) : "";
-      this.channelValue ? (paramsObj.cid = this.channelValue) : "";
-      this.minIdMobileValue ? (paramsObj.id = this.minIdMobileValue) : "";
-      this.maxIdMobileValue ? (paramsObj.idEnd = this.maxIdMobileValue) : "";
-      repeatOrder ? (paramsObj.isRepeat = repeatOrder) : "";
-      usefulOrder ? (paramsObj.mode = usefulOrder) : "";
       this.nameMobileValue ? (paramsObj.name = this.nameMobileValue) : "";
-      productId ? paramsObj.productId : "";
       this.phoneMobileValue
         ? (paramsObj.telephone = this.phoneMobileValue)
-        : "";
-      this.minPriceMobileValue
-        ? (paramsObj.totalCost = this.minPriceMobileValue)
-        : "";
-      this.maxPriceMobileValue
-        ? (paramsObj.totalCostEnd = this.maxPriceMobileValue)
         : "";
       if (uids.length > 0) {
         paramsObj.uids = uids.join(",");
       }
-      getAllOrderList(this.paramsObj)
+      getAllOrderList(paramsObj)
         .then(res => {
           this.listTotal = res.data.total;
           this.list = res.data.rows;
           this.listLoading = false;
+          this.$refs.orderTable.bodyWrapper.scrollTop = 0;
         })
         .catch(error => {
-          console.log(error);
           this.$message.error("获取数据时出错");
           this.listLoading = false;
         });
     },
+    // 合计
+    getSummaries(param) {
+      const { columns, data } = param;
+      const sums = [];
+      columns.forEach((column, index) => {
+        if (index === 0) {
+          sums[index] = "合计";
+          return;
+        }
+        const values = data.map(item => Number(item[column.property]));
+        if (index === 4 || index === 5) {
+          sums[index] = values.reduce((prev, curr) => {
+            const value = Number(curr);
+            if (!isNaN(value)) {
+              return prev + curr;
+            } else {
+              return prev;
+            }
+          }, 0);
+        }
+      });
+      return sums;
+    },
     // 分页器
     handlePageChange() {
+      console.log(this.mobileCurrentPage);
       this.getMobileList();
     },
     // 点击搜索
@@ -977,9 +1085,6 @@ export default {
         this.repeatOrderMobileValue == "请选择"
           ? ""
           : (this.repeatOrderMobileValue = "请选择"),
-        this.repeatNamePhoneMobileValue == "请选择"
-          ? ""
-          : (this.repeatNamePhoneMobileValue = "请选择"),
         this.exportJDMobileValue == "请选择"
           ? ""
           : (this.exportJDMobileValue = "请选择"),
@@ -1122,14 +1227,6 @@ export default {
         this.mobileRepeatOrderPickerShow = !this.mobileRepeatOrderPickerShow;
       }
     },
-    // 确认选择是否重复电话姓名
-    repeatNamePhonePickerConfirm(res) {
-      if (this.mobileRepeatNamePhonePickerShow) {
-        this.repeatNamePhoneMobileValue = res;
-        this.mobileRepeatNamePhonePickerShow = !this
-          .mobileRepeatNamePhonePickerShow;
-      }
-    },
     // 确认选择是否导入京东
     exportJDPickerConfirm(res) {
       if (this.mobileExportJDPickerShow) {
@@ -1177,14 +1274,18 @@ export default {
     handleJumpPage() {
       let jumpPage = parseInt(this.pageJumpIndex);
       if (jumpPage == this.mobileCurrentPage) return;
-      if (jumpPage > Math.ceil(this.listTotal / this.pagesize)) {
-        jumpPage = Math.ceil(this.listTotal / this.pagesize);
+      if (jumpPage > Math.ceil(this.listTotal / 50)) {
+        jumpPage = Math.ceil(this.listTotal / 50);
       }
       if (jumpPage < 1) {
         jumpPage = 1;
       }
       this.pageJumpIndex = jumpPage;
       this.mobileCurrentPage = jumpPage;
+      this.getMobileList();
+    },
+    // 刷新
+    handleRefreshMobile() {
       this.getMobileList();
     }
   }
@@ -1197,7 +1298,7 @@ export default {
 }
 
 .table-input {
-  width: 140px;
+  width: 130px;
   padding: 5px 0;
 }
 .filter-container label {
